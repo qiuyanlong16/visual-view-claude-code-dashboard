@@ -10,6 +10,7 @@
   import ProgressBar from "../components/ProgressBar.svelte";
   import AgentRow from "../components/AgentRow.svelte";
   import MemoryPanel from "../components/MemoryPanel.svelte";
+  import SessionsActivityChart from "../components/SessionsActivityChart.svelte";
   import { navigate } from "../router.js";
   import { onMount } from "svelte";
 
@@ -25,6 +26,7 @@
   $: activeSessions = er.active;
   $: totalEvents = er.totalEvents;
   $: totalTurns = (s.totalTurns || 0);
+  $: hourlyBuckets = aggregateHourly(er.buckets);
 
   $: conn = $connected;
   $: isConn = conn ? "connected" : "disconnected";
@@ -95,6 +97,25 @@
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
     if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
     return String(n);
+  }
+
+  function aggregateHourly(buckets) {
+    if (!buckets || buckets.length === 0) return { turnData: [], agentData: [], labels: [] };
+    const hourMap = new Map();
+    for (const b of buckets) {
+      const [h, m] = b.time.split(":").map(Number);
+      const label = `${h.toString().padStart(2, "0")}`;
+      if (!hourMap.has(label)) hourMap.set(label, { turnCount: 0, agentCount: 0 });
+      const entry = hourMap.get(label);
+      entry.turnCount += b.turnCount;
+      entry.agentCount += b.agentCount;
+    }
+    const sorted = [...hourMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    return {
+      turnData: sorted.map(([, v]) => v.turnCount),
+      agentData: sorted.map(([, v]) => v.agentCount),
+      labels: sorted.map(([k]) => k + ":00"),
+    };
   }
 
   // SVG icons as HTML strings
@@ -330,8 +351,8 @@
       {/if}
     </div>
 
-    <!-- Sessions Activity Chart -->
-    <div class="d-panel" style="animation-delay: 0.65s" on:click={() => navigate("sessions")} role="button" tabindex="0">
+    <!-- Sessions Activity Chart (spans 2 columns, Row 3) -->
+    <div class="d-panel d-sessions-activity" style="animation-delay: 0.65s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
@@ -345,21 +366,10 @@
           <span class="sa-stat"><b>{totalTurns}</b> turns</span>
         </div>
       </div>
-      {#if er.buckets.length === 0}
+      {#if hourlyBuckets.turnData.length === 0}
         <div class="empty-msg">No events in last 2 hours.</div>
       {:else}
-        <div class="event-rate-chart">
-          {#each er.buckets as bucket}
-            <div class="rate-bar" title="{bucket.time}: {bucket.turnCount} turns, {bucket.agentCount} agent events">
-              <div class="rate-bar-turn" style="height: {(bucket.turnCount / maxRate) * 100}%"></div>
-              <div class="rate-bar-agent" style="height: {(bucket.agentCount / maxRate) * 100}%"></div>
-            </div>
-          {/each}
-        </div>
-        <div class="event-rate-labels">
-          <span>-2h</span>
-          <span>now</span>
-        </div>
+        <SessionsActivityChart turnData={hourlyBuckets.turnData} agentData={hourlyBuckets.agentData} labels={hourlyBuckets.labels} />
       {/if}
     </div>
   </div>
@@ -446,11 +456,12 @@
   .kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
 
   /* Grid */
-  .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 320px; grid-template-rows: auto auto auto; gap: 12px; }
+  .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 320px; grid-template-rows: auto auto auto auto; gap: 12px; }
   .dashboard-bottom { display: grid; grid-template-columns: 1fr 1fr 320px; gap: 12px; margin-top: 12px; }
 
   /* Panel overrides */
   .d-chart-panel { grid-column: 1 / 4; }
+  .d-sessions-activity { grid-column: 3 / 5; }
   .d-panel { min-height: 100px; }
   .d-panel[role="button"] { cursor: pointer; }
   .d-panel[role="button"]:hover { border-color: #3a3a5a; }
