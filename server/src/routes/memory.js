@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { readFileSync, writeFileSync, existsSync, statSync, readdirSync as fsReaddir } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -76,6 +76,115 @@ export function memoryRoutes(app) {
     } catch (e) {
       return c.json({ error: e.message }, 400);
     }
+  });
+
+  app.get("/memory/projects/data", (c) => {
+    const configPath = getViewClaudePath();
+    if (!existsSync(configPath)) {
+      return c.json({ projects: {} });
+    }
+    let projects = [];
+    try {
+      const parsed = JSON.parse(readFileSync(configPath, "utf-8"));
+      projects = parsed.projects || [];
+    } catch {
+      return c.json({ projects: {} });
+    }
+
+    const result = {};
+    for (const projectPath of projects) {
+      const name = basename(projectPath) || projectPath;
+      const entry = { name, memoryFiles: [], hasSettings: false, settingsContent: null, hasClaudeMd: false, claudeMdSize: 0 };
+
+      // Memory files
+      const memDir = join(projectPath, ".claude", "memory");
+      if (existsSync(memDir)) {
+        try {
+          const entries = readdirSync(memDir, { withFileTypes: true });
+          for (const e of entries) {
+            if (e.isFile() && e.name.endsWith(".md")) {
+              const fullPath = join(memDir, e.name);
+              const st = statSync(fullPath);
+              entry.memoryFiles.push({
+                name: e.name,
+                path: fullPath,
+                size: st.size,
+                modified: st.mtime.toISOString(),
+              });
+            }
+          }
+        } catch {}
+      }
+
+      // Settings
+      const settingsPath = join(projectPath, ".claude", "settings.local.json");
+      if (existsSync(settingsPath)) {
+        try {
+          entry.hasSettings = true;
+          entry.settingsContent = readFileSync(settingsPath, "utf-8");
+        } catch {}
+      }
+
+      // CLAUDE.md
+      const claudePath = join(projectPath, "CLAUDE.md");
+      if (existsSync(claudePath)) {
+        try {
+          const st = statSync(claudePath);
+          entry.hasClaudeMd = true;
+          entry.claudeMdSize = st.size;
+        } catch {}
+      }
+
+      result[projectPath] = entry;
+    }
+    return c.json({ projects: result });
+  });
+
+  app.get("/memory/global", (c) => {
+    const homeDir = homedir();
+    const claudeDir = join(homeDir, ".claude");
+
+    const memoryFiles = [];
+    const memoryDir = join(claudeDir, "memory");
+    if (existsSync(memoryDir)) {
+      try {
+        const entries = readdirSync(memoryDir, { withFileTypes: true });
+        for (const e of entries) {
+          if (e.isFile() && e.name.endsWith(".md")) {
+            const fullPath = join(memoryDir, e.name);
+            const st = statSync(fullPath);
+            memoryFiles.push({
+              name: e.name,
+              path: fullPath,
+              size: st.size,
+              modified: st.mtime.toISOString(),
+            });
+          }
+        }
+      } catch {}
+    }
+
+    const agentFiles = [];
+    const agentsDir = join(claudeDir, "agents");
+    if (existsSync(agentsDir)) {
+      try {
+        const entries = readdirSync(agentsDir, { withFileTypes: true });
+        for (const e of entries) {
+          if (e.isFile() && e.name.endsWith(".md")) {
+            const fullPath = join(agentsDir, e.name);
+            const st = statSync(fullPath);
+            agentFiles.push({
+              name: e.name.replace(".md", ""),
+              path: fullPath,
+              size: st.size,
+              modified: st.mtime.toISOString(),
+            });
+          }
+        }
+      } catch {}
+    }
+
+    return c.json({ memoryFiles, agentFiles });
   });
 }
 
