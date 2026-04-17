@@ -372,26 +372,6 @@
       </div>
     </div>
 
-    <div class="d-panel" style="animation-delay: 0.75s" on:click={() => navigate("timeline")} role="button" tabindex="0">
-      <div class="d-panel-header">
-        <div class="d-panel-title">
-          <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          </span>
-          Session Activity
-        </div>
-      </div>
-      <div class="event-stream">
-        {#each e.slice(-6).reverse() as evt}
-          <div class="d-event-item">
-            <span class="d-event-time">{(evt.timestamp || evt.receivedAt || "").slice(11, 19)}</span>
-            <span class="event-type-badge" data-type={evt.type}>{evt.type?.replace("_end", "").replace("_start", "").toUpperCase()}</span>
-            <span class="d-event-detail">{evt.session_id?.slice(0, 8)} · {evt.data?.tools_used?.join(", ") || ""}</span>
-          </div>
-        {/each}
-      </div>
-    </div>
-
     <div class="d-panel" style="animation-delay: 0.8s">
       <div class="d-panel-header">
         <div class="d-panel-title">

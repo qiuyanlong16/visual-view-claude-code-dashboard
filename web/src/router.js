@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 
-const routes = ["dashboard", "live", "timeline", "memory", "tools", "cost", "overview", "playbook"];
+const routes = ["dashboard", "live", "memory", "tools", "cost", "overview", "playbook"];
 
 export const currentRoute = writable("dashboard");
 

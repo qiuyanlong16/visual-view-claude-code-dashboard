@@ -2,7 +2,7 @@
   import Sidebar from "./components/Sidebar.svelte";
   import Dashboard from "./views/Dashboard.svelte";
   import LiveFeed from "./views/LiveFeed.svelte";
-  import SessionTimeline from "./views/SessionTimeline.svelte";
+
   import MemoryInspector from "./views/MemoryInspector.svelte";
   import SkillsUsage from "./views/ToolsUsage.svelte";
   import CostAnalytics from "./views/CostAnalytics.svelte";
@@ -21,7 +21,7 @@
   const views = [
     { id: "dashboard", label: "Dashboard" },
     { id: "live", label: "Live Feed" },
-    { id: "timeline", label: "Session Timeline" },
+
     { id: "memory", label: "Memory Inspector" },
     { id: "tools", label: "Tools" },
     { id: "cost", label: "Cost & Tokens" },
@@ -60,8 +60,6 @@
       <Dashboard />
     {:else if $currentRoute === "live"}
       <LiveFeed />
-    {:else if $currentRoute === "timeline"}
-      <SessionTimeline />
     {:else if $currentRoute === "memory"}
       <MemoryInspector />
     {:else if $currentRoute === "tools"}
