@@ -355,14 +355,14 @@
   <div class="pb-grid">
     {#each sections as section, i}
       <div class="pb-card" class:expanded={expandedCard === i}>
-        <div class="pb-card-header" on:click={() => toggleCard(i)}>
+        <button class="pb-card-header" on:click={() => toggleCard(i)} type="button">
           <div class="pb-card-title">
             <span class="pb-card-icon">{section.icon}</span>
             <span>{section.title}</span>
           </div>
           <span class="pb-card-summary">{section.summary}</span>
           <span class="pb-chevron" class:open={expandedCard === i}>&#9654;</span>
-        </div>
+        </button>
         <div class="pb-card-body" class:collapsed={expandedCard !== i}>
           {@html section.renderBody(expandedCard === i)}
         </div>
@@ -393,6 +393,8 @@
   .pb-card-header {
     display: flex; align-items: center; gap: 10px; padding: 14px 16px;
     cursor: pointer; user-select: none;
+    background: none; border: none; width: 100%; text-align: left;
+    font: inherit; color: inherit;
   }
   .pb-card-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
   .pb-card-icon { font-size: 16px; }
