@@ -138,8 +138,9 @@
   {#if projects.length === 0 && !showAddForm}
     <div class="empty-msg">No projects configured. Click "+ Add Project" to get started.</div>
   {:else}
+    <!-- Configured projects -->
     {#each projects as projectPath}
-      {@const info = pData[projectPath] || { name: projectPath, memoryFiles: [], hasSettings: false, hasClaudeMd: false }}
+      {@const info = pData[projectPath] || { name: projectPath, memoryFiles: [], hasSettings: false, hasClaudeMd: false, isAutoDiscovered: false }}
       <div class="project-card">
         <div class="project-header">
           <span class="project-name">{info.name}</span>
@@ -198,6 +199,74 @@
             {#if expandedFile === `${projectPath}::claude`}
               <div class="subsection-content">
                 <MemoryFileViewer fileName="CLAUDE.md" filePath={projectPath + "/CLAUDE.md"} expanded={true} />
+              </div>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/each}
+
+    <!-- Auto-discovered projects -->
+    {#each Object.keys(pData).filter((k) => k.startsWith("auto:")) as key}
+      {@const info = pData[key]}
+      {@const name = key.replace("auto:", "")}
+      <div class="project-card auto-discovered">
+        <div class="project-header">
+          <span class="project-name">{name}</span>
+          <span class="auto-badge">auto-detected</span>
+        </div>
+
+        <!-- Project Memory Files -->
+        <div class="subsection">
+          <button class="subsection-header" on:click={() => toggleProjectSection(key, "mem")}>
+            <span class="arrow" class:open={expandedFile === `${key}::mem`}>▶</span>
+            Memory ({info.memoryFiles.length})
+          </button>
+          {#if expandedFile === `${key}::mem`}
+            <div class="subsection-content">
+              {#if info.memoryFiles.length === 0}
+                <div class="empty-sub">No memory files.</div>
+              {:else}
+                {#each info.memoryFiles as file}
+                  {#if expandedFile === `${key}::mem::${file.name}`}
+                    <MemoryFileViewer fileName={file.name} filePath={file.path} expanded={true} />
+                  {:else}
+                    <button class="file-item-btn" on:click={() => toggleProjectSection(key, `mem::${file.name}`)}>
+                      <span class="file-name">{file.name}</span>
+                      <span class="file-meta">{formatSize(file.size)} · {file.modified.slice(0, 10)}</span>
+                    </button>
+                  {/if}
+                {/each}
+              {/if}
+            </div>
+          {/if}
+        </div>
+
+        <!-- Project Settings -->
+        {#if info.hasSettings}
+          <div class="subsection">
+            <button class="subsection-header" on:click={() => toggleProjectSection(key, "settings")}>
+              <span class="arrow" class:open={expandedFile === `${key}::settings`}>▶</span>
+              Settings
+            </button>
+            {#if expandedFile === `${key}::settings`}
+              <div class="subsection-content">
+                <pre class="settings-preview">{info.settingsContent}</pre>
+              </div>
+            {/if}
+          </div>
+        {/if}
+
+        <!-- CLAUDE.md -->
+        {#if info.hasClaudeMd}
+          <div class="subsection">
+            <button class="subsection-header" on:click={() => toggleProjectSection(key, "claude")}>
+              <span class="arrow" class:open={expandedFile === `${key}::claude`}>▶</span>
+              CLAUDE.md ({formatSize(info.claudeMdSize)})
+            </button>
+            {#if expandedFile === `${key}::claude`}
+              <div class="subsection-content">
+                <MemoryFileViewer fileName="CLAUDE.md" filePath={info.name + "/CLAUDE.md"} expanded={true} />
               </div>
             {/if}
           </div>
@@ -282,6 +351,13 @@
     border-radius: 4px; color: var(--red); font-size: 11px; padding: 2px 8px; cursor: pointer;
   }
   .remove-btn:hover { background: rgba(239,68,68,0.1); }
+
+  .auto-discovered { border-left: 3px solid var(--accent); }
+  .auto-badge {
+    font-size: 10px; color: var(--text-muted); background: var(--bg-tertiary);
+    border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+    font-family: monospace;
+  }
 
   .subsection { margin: 4px 0; }
 

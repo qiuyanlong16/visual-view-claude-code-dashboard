@@ -118,23 +118,128 @@ export function memoryRoutes(app) {
     }
   });
 
+  // Auto-discover all projects from ~/.claude/projects/
+  app.get("/memory/auto-discover", (c) => {
+    const projectsDir = join(homedir(), ".claude", "projects");
+    if (!existsSync(projectsDir)) {
+      return c.json({ projects: [] });
+    }
+    const projects = [];
+    try {
+      const entries = readdirSync(projectsDir, { withFileTypes: true });
+      for (const e of entries) {
+        if (e.isDirectory()) {
+          const projDir = join(projectsDir, e.name);
+          const memDir = join(projDir, "memory");
+          // List ALL project directories, even without memory files yet
+          let displayName = e.name;
+          if (existsSync(memDir)) {
+            const projectMd = join(memDir, "project.md");
+            if (existsSync(projectMd)) {
+              try {
+                const firstLine = readFileSync(projectMd, "utf-8").split("\n")[0].replace(/^#\s*/, "").trim();
+                if (firstLine) displayName = firstLine;
+              } catch {}
+            }
+          }
+          projects.push({
+            name: e.name,
+            path: projDir,
+            memoryDir: memDir,
+            displayName,
+            memoryCount: existsSync(memDir) ? readdirSync(memDir, { withFileTypes: true }).filter(f => f.isFile() && f.name.endsWith(".md")).length : 0,
+          });
+        }
+      }
+    } catch {}
+    return c.json({ projects });
+  });
+
+  // Scan a single project directory (from auto-discover) for memory + settings
+  function scanProjectInfo(projectPath, name) {
+    const entry = { name, memoryFiles: [], hasSettings: false, settingsContent: null, hasClaudeMd: false, claudeMdSize: 0, isAutoDiscovered: true };
+    // Memory files from ~/.claude/projects/<name>/memory/
+    const ccMemDir = join(homedir(), ".claude", "projects", name, "memory");
+    if (existsSync(ccMemDir)) {
+      try {
+        const entries = readdirSync(ccMemDir, { withFileTypes: true });
+        for (const e of entries) {
+          if (e.isFile() && e.name.endsWith(".md")) {
+            const fullPath = join(ccMemDir, e.name);
+            const st = statSync(fullPath);
+            entry.memoryFiles.push({
+              name: e.name,
+              path: fullPath,
+              size: st.size,
+              modified: st.mtime.toISOString(),
+            });
+          }
+        }
+      } catch {}
+    }
+    // Settings from <project-path>/.claude/settings.local.json (if path is a real workspace)
+    const settingsPath = join(projectPath, ".claude", "settings.local.json");
+    if (existsSync(settingsPath)) {
+      try {
+        entry.hasSettings = true;
+        entry.settingsContent = readFileSync(settingsPath, "utf-8");
+      } catch {}
+    }
+    // CLAUDE.md from <project-path>/CLAUDE.md
+    const claudePath = join(projectPath, "CLAUDE.md");
+    if (existsSync(claudePath)) {
+      try {
+        const st = statSync(claudePath);
+        entry.hasClaudeMd = true;
+        entry.claudeMdSize = st.size;
+      } catch {}
+    }
+    return entry;
+  }
+
   app.get("/memory/projects/data", (c) => {
     const configPath = getViewClaudePath();
-    if (!existsSync(configPath)) {
-      return c.json({ projects: {} });
+    // Collect configured projects
+    let configuredProjects = [];
+    if (existsSync(configPath)) {
+      try {
+        const parsed = JSON.parse(readFileSync(configPath, "utf-8"));
+        configuredProjects = parsed.projects || [];
+      } catch {}
     }
-    let projects = [];
-    try {
-      const parsed = JSON.parse(readFileSync(configPath, "utf-8"));
-      projects = parsed.projects || [];
-    } catch {
-      return c.json({ projects: {} });
+    // Auto-discover from ~/.claude/projects/
+    const projectsDir = join(homedir(), ".claude", "projects");
+    const autoProjects = [];
+    if (existsSync(projectsDir)) {
+      try {
+        const entries = readdirSync(projectsDir, { withFileTypes: true });
+        for (const e of entries) {
+          if (e.isDirectory()) {
+            const projDir = join(projectsDir, e.name);
+            const memDir = join(projDir, "memory");
+            // Include ALL project directories, not just those with memory files
+            let displayName = e.name;
+            if (existsSync(memDir)) {
+              const projectMd = join(memDir, "project.md");
+              if (existsSync(projectMd)) {
+                try {
+                  const firstLine = readFileSync(projectMd, "utf-8").split("\n")[0].replace(/^#\s*/, "").trim();
+                  if (firstLine) displayName = firstLine;
+                } catch {}
+              }
+            }
+            autoProjects.push({ dirName: e.name, displayName, projDir });
+          }
+        }
+      } catch {}
     }
 
     const result = {};
-    for (const projectPath of projects) {
+
+    // Scan configured projects
+    for (const projectPath of configuredProjects) {
       const name = basename(projectPath) || projectPath;
-      const entry = { name, memoryFiles: [], hasSettings: false, settingsContent: null, hasClaudeMd: false, claudeMdSize: 0 };
+      const entry = { name, memoryFiles: [], hasSettings: false, settingsContent: null, hasClaudeMd: false, claudeMdSize: 0, isAutoDiscovered: false };
 
       // Memory files — from both .claude/memory/ and ~/.claude/projects/<name>/memory/
       const memDir = join(projectPath, ".claude", "memory");
@@ -149,7 +254,6 @@ export function memoryRoutes(app) {
             if (e.isFile() && e.name.endsWith(".md")) {
               const fullPath = join(dir, e.name);
               const st = statSync(fullPath);
-              // Avoid duplicates
               if (!entry.memoryFiles.some((f) => f.name === e.name)) {
                 entry.memoryFiles.push({
                   name: e.name,
@@ -184,6 +288,17 @@ export function memoryRoutes(app) {
 
       result[projectPath] = entry;
     }
+
+    // Scan auto-discovered projects (only those not already covered by configured projects)
+    for (const { dirName, displayName, projDir } of autoProjects) {
+      // Skip if this project is already covered by a configured project
+      const alreadyScanned = configuredProjects.some((p) =>
+        p.endsWith(dirName) || dirName.endsWith(basename(p))
+      );
+      if (alreadyScanned) continue;
+      result["auto:" + dirName] = scanProjectInfo(projDir, dirName);
+    }
+
     return c.json({ projects: result });
   });
 
