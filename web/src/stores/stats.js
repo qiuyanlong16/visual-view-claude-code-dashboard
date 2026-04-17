@@ -15,14 +15,14 @@ export const stats = writable({
   memoryStats: { files: 0, size: 0, lastAccess: null },
 });
 
-export const eventRate = writable({ buckets: [], active: 0, totalEvents: 0 });
+export const eventRate = writable({ buckets: [], active: 0, totalEvents: 0, hours: 2 });
 
 export async function fetchStats() {
   const res = await fetch("/stats");
   if (res.ok) stats.set(await res.json());
 }
 
-export async function fetchEventRate() {
-  const res = await fetch("/stats/events-rate");
+export async function fetchEventRate(hours = 2) {
+  const res = await fetch(`/stats/events-rate?hours=${hours}`);
   if (res.ok) eventRate.set(await res.json());
 }

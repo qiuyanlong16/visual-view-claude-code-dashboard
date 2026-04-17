@@ -32,12 +32,12 @@
     await fetchHistory();
     await fetchSessions();
     await fetchStats();
-    await fetchEventRate();
+    await fetchEventRate(24);
     startRealtimePolling(5000);
 
     setInterval(() => fetchSessions(), 10000);
     setInterval(() => fetchStats(), 15000);
-    setInterval(() => fetchEventRate(), 5000);
+    setInterval(() => fetchEventRate(24), 5000);
   }
 
   onMount(() => {

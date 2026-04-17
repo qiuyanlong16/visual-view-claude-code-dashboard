@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC Observatory — Dashboard Preview</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #080812;
+  color: #e0e0f0;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; margin-bottom: 20px;
+  background: linear-gradient(135deg, #0f0f1a 0%, #161630 100%);
+  border: 1px solid #1e1e3a; border-radius: 14px;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.logo-icon { width: 36px; height: 36px; }
+.header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.header h1 span { color: #7c6fe0; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.status-badge {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3);
+  font-size: 12px; color: #4ade80; font-weight: 600;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #4ade80; }
+  50% { opacity: 0.5; box-shadow: 0 0 8px #4ade80; }
+}
+.time-filter {
+  padding: 5px 12px; border-radius: 8px; background: #161625;
+  border: 1px solid #2a2a40; color: #9090b0; font-size: 12px; cursor: pointer;
+}
+
+/* KPI Strip */
+.kpi-strip {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px;
+}
+.kpi-card {
+  background: #0f0f1a; border: 1px solid #1e1e32; border-radius: 12px;
+  padding: 16px; position: relative; overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.kpi-card:hover { border-color: #3a3a5a; transform: translateY(-1px); }
+.kpi-card .kpi-icon {
+  width: 32px; height: 32px; border-radius: 8px; display: flex;
+  align-items: center; justify-content: center; margin-bottom: 10px;
+}
+.kpi-card .kpi-label {
+  font-size: 11px; color: #606080; text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 600; margin-bottom: 4px;
+}
+.kpi-card .kpi-value { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+.kpi-card .kpi-sub { font-size: 11px; color: #606080; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+.kpi-card .kpi-sub .up { color: #4ade80; }
+.kpi-card .kpi-sub .down { color: #f87171; }
+.kpi-card .sparkline { position: absolute; bottom: 0; right: 0; opacity: 0.3; }
+
+/* Main Grid */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 320px;
+  grid-template-rows: auto auto auto;
+  gap: 12px;
+}
+.panel {
+  background: #0f0f1a; border: 1px solid #1e1e32; border-radius: 12px;
+  padding: 16px; position: relative;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.panel-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.panel-title .icon {
+  width: 20px; height: 20px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.panel-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  font-weight: 600; text-transform: uppercase;
+}
+
+/* Token Chart */
+.chart-panel { grid-column: 1 / 4; min-height: 260px; }
+.chart-area {
+  width: 100%; height: 180px; position: relative;
+}
+.chart-area svg { width: 100%; height: 100%; }
+.chart-legend {
+  display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: #9090b0;
+}
+.chart-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* Agent Panel */
+.agent-panel { min-height: 260px; }
+.agent-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; margin-bottom: 4px;
+  background: #161625; transition: background 0.15s;
+}
+.agent-item:hover { background: #1e1e32; }
+.agent-avatar {
+  width: 28px; height: 28px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+}
+.agent-info { flex: 1; }
+.agent-name { font-size: 12px; font-weight: 600; }
+.agent-type { font-size: 10px; color: #606080; }
+.agent-status {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+}
+
+/* Tool Call Panel */
+.tools-panel { min-height: 200px; }
+.tool-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid #161625;
+}
+.tool-row:last-child { border: none; }
+.tool-icon {
+  width: 24px; height: 24px; border-radius: 6px; display: flex;
+  align-items: center; justify-content: center; font-size: 11px;
+}
+.tool-name { font-size: 12px; flex: 1; }
+.tool-count { font-size: 12px; color: #9090b0; font-family: monospace; min-width: 30px; text-align: right; }
+.tool-bar { width: 60px; height: 4px; background: #1e1e32; border-radius: 2px; overflow: hidden; }
+.tool-bar-fill { height: 100%; border-radius: 2px; }
+
+/* Skills Panel */
+.skills-panel { min-height: 200px; }
+.skill-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid #161625;
+}
+.skill-item:last-child { border: none; }
+.skill-icon {
+  width: 22px; height: 22px; border-radius: 5px; display: flex;
+  align-items: center; justify-content: center; font-size: 11px;
+}
+.skill-name { font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-count { font-size: 11px; color: #9090b0; font-family: monospace; }
+
+/* Memory Panel */
+.memory-panel { min-height: 160px; }
+.mem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mem-card {
+  background: #161625; border-radius: 8px; padding: 10px; text-align: center;
+  border: 1px solid #1e1e32; transition: border-color 0.15s;
+}
+.mem-card:hover { border-color: #3a3a5a; }
+.mem-icon { font-size: 18px; margin-bottom: 4px; }
+.mem-label { font-size: 10px; color: #9090b0; margin-bottom: 2px; }
+.mem-value { font-size: 14px; font-weight: 700; }
+
+/* Error Panel */
+.error-panel { min-height: 160px; }
+.error-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid #161625;
+}
+.error-item:last-child { border: none; }
+.error-dot {
+  width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0;
+}
+.error-msg { font-size: 11px; color: #9090b0; flex: 1; }
+.error-time { font-size: 10px; color: #606080; font-family: monospace; white-space: nowrap; }
+
+/* Event Stream */
+.stream-panel { min-height: 300px; }
+.event-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 6px; margin-bottom: 3px;
+  background: #161625; font-size: 11px;
+}
+.event-time { color: #606080; font-family: monospace; font-size: 10px; min-width: 48px; }
+.event-type {
+  padding: 1px 6px; border-radius: 3px; font-size: 9px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.event-detail { color: #9090b0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+/* Session Panel */
+.session-panel { min-height: 120px; }
+.session-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid #161625;
+}
+.session-item:last-child { border: none; }
+.session-dot { width: 6px; height: 6px; border-radius: 50%; }
+.session-id { font-size: 11px; font-family: monospace; flex: 1; }
+.session-turns { font-size: 10px; color: #606080; }
+
+/* Heatmap */
+.heatmap-panel { min-height: 80px; }
+.heatmap { display: flex; gap: 2px; flex-wrap: wrap; }
+.heatmap-cell {
+  width: 12px; height: 12px; border-radius: 2px; background: #161625;
+}
+
+/* Bottom strip */
+.bottom-strip {
+  display: grid; grid-template-columns: 1fr 1fr 320px; gap: 12px; margin-top: 12px;
+}
+
+/* Donut chart */
+.donut-wrap { display: flex; align-items: center; gap: 16px; }
+.donut-labels { display: flex; flex-direction: column; gap: 4px; }
+.donut-label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9090b0; }
+.donut-label .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.panel, .kpi-card { animation: fadeIn 0.4s ease-out both; }
+.panel:nth-child(1) { animation-delay: 0.05s; }
+.panel:nth-child(2) { animation-delay: 0.1s; }
+.panel:nth-child(3) { animation-delay: 0.15s; }
+.panel:nth-child(4) { animation-delay: 0.2s; }
+.panel:nth-child(5) { animation-delay: 0.25s; }
+.panel:nth-child(6) { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <svg class="logo-icon" viewBox="0 0 36 36">
+      <defs>
+        <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#7c6fe0"/>
+          <stop offset="100%" style="stop-color:#4ade80"/>
+        </linearGradient>
+      </defs>
+      <circle cx="18" cy="18" r="16" fill="none" stroke="url(#logo-grad)" stroke-width="2.5"/>
+      <circle cx="18" cy="18" r="6" fill="#7c6fe0"/>
+      <line x1="18" y1="2" x2="18" y2="12" stroke="#4ade80" stroke-width="1.5"/>
+      <line x1="18" y1="24" x2="18" y2="34" stroke="#4ade80" stroke-width="1.5"/>
+      <line x1="2" y1="18" x2="12" y2="18" stroke="#60a5fa" stroke-width="1.5"/>
+      <line x1="24" y1="18" x2="34" y2="18" stroke="#60a5fa" stroke-width="1.5"/>
+    </svg>
+    <h1><span>CC</span> Observatory — Command Center</h1>
+  </div>
+  <div class="header-right">
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      SSE Connected
+    </div>
+    <select class="time-filter">
+      <option>Last 1 hour</option>
+      <option>Last 6 hours</option>
+      <option selected>Last 24 hours</option>
+      <option>Last 7 days</option>
+    </select>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background: rgba(96,165,250,0.15); color: #60a5fa;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>
+    </div>
+    <div class="kpi-label">Total Tokens</div>
+    <div class="kpi-value" style="color: #60a5fa;">35.2K</div>
+    <div class="kpi-sub"><span class="up">▲ 12.3%</span> vs last 24h</div>
+    <svg class="sparkline" width="80" height="30"><polyline points="0,25 10,20 20,22 30,15 40,18 50,10 60,14 70,8 80,5" fill="none" stroke="#60a5fa" stroke-width="1.5"/></svg>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background: rgba(74,222,128,0.15); color: #4ade80;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    </div>
+    <div class="kpi-label">Est. Cost</div>
+    <div class="kpi-value" style="color: #4ade80;">$0.04</div>
+    <div class="kpi-sub"><span class="down">▼ 3.1%</span> vs last 24h</div>
+    <svg class="sparkline" width="80" height="30"><polyline points="0,10 10,15 20,12 30,18 40,14 50,20 60,16 70,22 80,18" fill="none" stroke="#4ade80" stroke-width="1.5"/></svg>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background: rgba(167,139,250,0.15); color: #a78bfa;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/></svg>
+    </div>
+    <div class="kpi-label">Agent Calls</div>
+    <div class="kpi-value" style="color: #a78bfa;">8</div>
+    <div class="kpi-sub">3 running · 5 completed</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background: rgba(251,191,36,0.15); color: #fbbf24;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <div class="kpi-label">Tool Calls</div>
+    <div class="kpi-value" style="color: #fbbf24;">47</div>
+    <div class="kpi-sub">8 tools · <span class="up">▲ 18%</span></div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background: rgba(248,113,113,0.15); color: #f87171;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+    </div>
+    <div class="kpi-label">Skills Used</div>
+    <div class="kpi-value" style="color: #f87171;">12</div>
+    <div class="kpi-sub">4 unique skills</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <div class="kpi-label">Errors</div>
+    <div class="kpi-value" style="color: #ef4444;">2</div>
+    <div class="kpi-sub"><span class="down">Last: 47 min ago</span></div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+  <!-- Token Trend Chart -->
+  <div class="panel chart-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        Token & Cost Trend
+      </div>
+      <span class="panel-badge" style="background: rgba(96,165,250,0.15); color: #60a5fa;">Live</span>
+    </div>
+    <div class="chart-area">
+      <svg viewBox="0 0 700 160">
+        <!-- Grid lines -->
+        <line x1="0" y1="0" x2="700" y2="0" stroke="#161625" stroke-width="1"/>
+        <line x1="0" y1="40" x2="700" y2="40" stroke="#161625" stroke-width="1"/>
+        <line x1="0" y1="80" x2="700" y2="80" stroke="#161625" stroke-width="1"/>
+        <line x1="0" y1="120" x2="700" y2="120" stroke="#161625" stroke-width="1"/>
+        <line x1="0" y1="160" x2="700" y2="160" stroke="#161625" stroke-width="1"/>
+        <!-- Y axis labels -->
+        <text x="-4" y="4" text-anchor="end" fill="#606080" font-size="9" font-family="monospace">4K</text>
+        <text x="-4" y="44" text-anchor="end" fill="#606080" font-size="9" font-family="monospace">3K</text>
+        <text x="-4" y="84" text-anchor="end" fill="#606080" font-size="9" font-family="monospace">2K</text>
+        <text x="-4" y="124" text-anchor="end" fill="#606080" font-size="9" font-family="monospace">1K</text>
+        <text x="-4" y="164" text-anchor="end" fill="#606080" font-size="9" font-family="monospace">0</text>
+        <!-- Input tokens area -->
+        <defs>
+          <linearGradient id="input-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#60a5fa" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="output-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M30,120 L80,95 L130,110 L180,70 L230,85 L280,55 L330,90 L380,65 L430,40 L480,75 L530,50 L580,80 L630,30 L680,20 L680,160 L30,160 Z" fill="url(#input-grad)"/>
+        <polyline points="30,120 80,95 130,110 180,70 230,85 280,55 330,90 380,65 430,40 480,75 530,50 580,80 630,30 680,20" fill="none" stroke="#60a5fa" stroke-width="2"/>
+        <!-- Output tokens -->
+        <path d="M30,135 L80,125 L130,130 L180,110 L230,120 L280,100 L330,125 L380,110 L430,90 L480,115 L530,95 L580,120 L630,70 L680,60 L680,160 L30,160 Z" fill="url(#output-grad)"/>
+        <polyline points="30,135 80,125 130,130 180,110 230,120 280,100 330,125 380,110 430,90 480,115 530,95 580,120 630,70 680,60" fill="none" stroke="#a78bfa" stroke-width="2"/>
+        <!-- Time labels -->
+        <text x="30" y="158" text-anchor="middle" fill="#606080" font-size="8" font-family="monospace">00:00</text>
+        <text x="180" y="158" text-anchor="middle" fill="#606080" font-size="8" font-family="monospace">06:00</text>
+        <text x="330" y="158" text-anchor="middle" fill="#606080" font-size="8" font-family="monospace">12:00</text>
+        <text x="480" y="158" text-anchor="middle" fill="#606080" font-size="8" font-family="monospace">18:00</text>
+        <text x="630" y="158" text-anchor="middle" fill="#606080" font-size="8" font-family="monospace">Now</text>
+        <!-- Data points -->
+        <circle cx="680" cy="20" r="3" fill="#60a5fa"><animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/></circle>
+        <circle cx="680" cy="60" r="3" fill="#a78bfa"><animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/></circle>
+      </svg>
+    </div>
+    <div class="chart-legend">
+      <span><span class="dot" style="background:#60a5fa"></span> Input Tokens</span>
+      <span><span class="dot" style="background:#a78bfa"></span> Output Tokens</span>
+      <span style="margin-left:auto;">Peak: 4.2K tokens @ 14:30</span>
+    </div>
+  </div>
+
+  <!-- Agent Activity -->
+  <div class="panel agent-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(167,139,250,0.2); color: #a78bfa;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/></svg>
+        </span>
+        Agent Activity
+      </div>
+      <span class="panel-badge" style="background: rgba(167,139,250,0.15); color: #a78bfa;">8 total</span>
+    </div>
+    <div class="agent-item">
+      <div class="agent-avatar" style="background: rgba(74,222,128,0.2); color: #4ade80;">E</div>
+      <div class="agent-info"><div class="agent-name">Explore</div><div class="agent-type">general-purpose</div></div>
+      <span class="agent-status" style="background: rgba(74,222,128,0.15); color: #4ade80;">Completed</span>
+    </div>
+    <div class="agent-item">
+      <div class="agent-avatar" style="background: rgba(96,165,250,0.2); color: #60a5fa;">G</div>
+      <div class="agent-info"><div class="agent-name">Code Reviewer</div><div class="agent-type">superpowers</div></div>
+      <span class="agent-status" style="background: rgba(251,191,36,0.15); color: #fbbf24;">Running</span>
+    </div>
+    <div class="agent-item">
+      <div class="agent-avatar" style="background: rgba(251,191,36,0.2); color: #fbbf24;">P</div>
+      <div class="agent-info"><div class="agent-name">Plan</div><div class="agent-type">software-architect</div></div>
+      <span class="agent-status" style="background: rgba(74,222,128,0.15); color: #4ade80;">Completed</span>
+    </div>
+    <div class="agent-item">
+      <div class="agent-avatar" style="background: rgba(248,113,113,0.2); color: #f87171;">S</div>
+      <div class="agent-info"><div class="agent-name">Security Review</div><div class="agent-type">code-reviewer</div></div>
+      <span class="agent-status" style="background: rgba(248,113,113,0.15); color: #f87171;">Failed</span>
+    </div>
+    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #161625;">
+      <div style="font-size: 10px; color: #606080; display: flex; gap: 12px;">
+        <span><span style="color: #4ade80;">●</span> 5 completed</span>
+        <span><span style="color: #fbbf24;">●</span> 3 running</span>
+        <span><span style="color: #f87171;">●</span> 1 failed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tool Calls -->
+  <div class="panel tools-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(251,191,36,0.2); color: #fbbf24;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        </span>
+        Tool Calls
+      </div>
+      <span class="panel-badge" style="background: rgba(251,191,36,0.15); color: #fbbf24;">47 total</span>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon" style="background: rgba(96,165,250,0.15); color: #60a5fa;">⌘</div>
+      <div class="tool-name">Bash</div>
+      <div class="tool-count">15</div>
+      <div class="tool-bar"><div class="tool-bar-fill" style="width: 100%; background: #60a5fa;"></div></div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon" style="background: rgba(74,222,128,0.15); color: #4ade80;">📄</div>
+      <div class="tool-name">Read</div>
+      <div class="tool-count">12</div>
+      <div class="tool-bar"><div class="tool-bar-fill" style="width: 80%; background: #4ade80;"></div></div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon" style="background: rgba(167,139,250,0.15); color: #a78bfa;">✏️</div>
+      <div class="tool-name">Edit</div>
+      <div class="tool-count">8</div>
+      <div class="tool-bar"><div class="tool-bar-fill" style="width: 53%; background: #a78bfa;"></div></div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon" style="background: rgba(251,191,36,0.15); color: #fbbf24;">🔍</div>
+      <div class="tool-name">Grep</div>
+      <div class="tool-count">5</div>
+      <div class="tool-bar"><div class="tool-bar-fill" style="width: 33%; background: #fbbf24;"></div></div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon" style="background: rgba(248,113,113,0.15); color: #f87171;">📐</div>
+      <div class="tool-name">Write</div>
+      <div class="tool-count">4</div>
+      <div class="tool-bar"><div class="tool-bar-fill" style="width: 27%; background: #f87171;"></div></div>
+    </div>
+    <div class="tool-row">
+      <div class="tool-icon" style="background: rgba(34,211,238,0.15); color: #22d3ee;">🌐</div>
+      <div class="tool-name">WebSearch</div>
+      <div class="tool-count">3</div>
+      <div class="tool-bar"><div class="tool-bar-fill" style="width: 20%; background: #22d3ee;"></div></div>
+    </div>
+  </div>
+
+  <!-- Skills -->
+  <div class="panel skills-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(248,113,113,0.2); color: #f87171;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </span>
+        Skills Invoked
+      </div>
+      <span class="panel-badge" style="background: rgba(248,113,113,0.15); color: #f87171;">12 calls</span>
+    </div>
+    <div class="skill-item">
+      <div class="skill-icon" style="background: rgba(74,222,128,0.15); color: #4ade80;">💡</div>
+      <div class="skill-name">superpowers:brainstorming</div>
+      <div class="skill-count">5</div>
+    </div>
+    <div class="skill-item">
+      <div class="skill-icon" style="background: rgba(96,165,250,0.15); color: #60a5fa;">✂️</div>
+      <div class="skill-name">superpowers:simplify</div>
+      <div class="skill-count">4</div>
+    </div>
+    <div class="skill-item">
+      <div class="skill-icon" style="background: rgba(251,191,36,0.15); color: #fbbf24;">🔒</div>
+      <div class="skill-name">superpowers:security-review</div>
+      <div class="skill-count">2</div>
+    </div>
+    <div class="skill-item">
+      <div class="skill-icon" style="background: rgba(167,139,250,0.15); color: #a78bfa;">📋</div>
+      <div class="skill-name">superpowers:review</div>
+      <div class="skill-count">1</div>
+    </div>
+  </div>
+
+  <!-- Memory -->
+  <div class="panel memory-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(74,222,128,0.2); color: #4ade80;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        </span>
+        Memory
+      </div>
+      <span class="panel-badge" style="background: rgba(74,222,128,0.15); color: #4ade80;">5 files</span>
+    </div>
+    <div class="mem-grid">
+      <div class="mem-card">
+        <div class="mem-icon">👤</div>
+        <div class="mem-label">User</div>
+        <div class="mem-value" style="color: #60a5fa;">2</div>
+      </div>
+      <div class="mem-card">
+        <div class="mem-icon">📝</div>
+        <div class="mem-label">Feedback</div>
+        <div class="mem-value" style="color: #fbbf24;">1</div>
+      </div>
+      <div class="mem-card">
+        <div class="mem-icon">🚀</div>
+        <div class="mem-label">Project</div>
+        <div class="mem-value" style="color: #4ade80;">1</div>
+      </div>
+      <div class="mem-card">
+        <div class="mem-icon">🔗</div>
+        <div class="mem-label">Reference</div>
+        <div class="mem-value" style="color: #a78bfa;">1</div>
+      </div>
+      <div class="mem-card">
+        <div class="mem-icon">⏰</div>
+        <div class="mem-label">Last Update</div>
+        <div class="mem-value" style="color: #9090b0; font-size: 10px;">3m ago</div>
+      </div>
+      <div class="mem-card">
+        <div class="mem-icon">📊</div>
+        <div class="mem-label">Total Size</div>
+        <div class="mem-value" style="color: #9090b0; font-size: 12px;">4.2KB</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Inspection -->
+  <div class="panel error-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(239,68,68,0.2); color: #ef4444;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+        Error Inspection
+      </div>
+      <span class="panel-badge" style="background: rgba(239,68,68,0.15); color: #ef4444;">2 errors</span>
+    </div>
+    <div class="error-item">
+      <div class="error-dot" style="background: #ef4444;"></div>
+      <div class="error-msg">Hook script timeout (2s) — session_end</div>
+      <div class="error-time">14:23</div>
+    </div>
+    <div class="error-item">
+      <div class="error-dot" style="background: #fbbf24;"></div>
+      <div class="error-msg">JSONL parse warning — skipped line #342</div>
+      <div class="error-time">08:14</div>
+    </div>
+    <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #161625; font-size: 10px; color: #606080; display: flex; justify-content: space-between;">
+      <span>Last 2 hours: <span style="color: #4ade80;">clean</span></span>
+      <span>24h error rate: 0.4%</span>
+    </div>
+  </div>
+
+  <!-- Activity Heatmap -->
+  <div class="panel heatmap-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        Activity Heatmap (7 days)
+      </div>
+    </div>
+    <div class="heatmap" id="heatmap"></div>
+  </div>
+
+  <!-- Model Breakdown Donut -->
+  <div class="panel" style="display: flex; align-items: center; gap: 20px;">
+    <div>
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#161625" stroke-width="14"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#60a5fa" stroke-width="14"
+          stroke-dasharray="176 75" stroke-dashoffset="0" stroke-linecap="round"
+          transform="rotate(-90 50 50)"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#a78bfa" stroke-width="14"
+          stroke-dasharray="50 201" stroke-dashoffset="-176" stroke-linecap="round"
+          transform="rotate(-90 50 50)"/>
+        <text x="50" y="47" text-anchor="middle" fill="#e0e0f0" font-size="14" font-weight="700">70%</text>
+        <text x="50" y="60" text-anchor="middle" fill="#606080" font-size="8">qwen3.6</text>
+      </svg>
+    </div>
+    <div>
+      <div class="panel-title" style="margin-bottom: 10px;">
+        <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20"/></svg>
+        </span>
+        Model Usage
+      </div>
+      <div class="donut-labels">
+        <div class="donut-label"><span class="dot" style="background:#60a5fa;"></span> qwen3.6-plus — 70%</div>
+        <div class="donut-label"><span class="dot" style="background:#a78bfa;"></span> claude-sonnet — 20%</div>
+        <div class="donut-label"><span class="dot" style="background:#161625; border: 1px solid #2a2a40;"></span> Other — 10%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sessions -->
+  <div class="panel session-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </span>
+        Sessions
+      </div>
+      <span class="panel-badge" style="background: rgba(34,211,238,0.15); color: #22d3ee;">3 active</span>
+    </div>
+    <div class="session-item">
+      <div class="session-dot" style="background: #4ade80;"></div>
+      <div class="session-id">demo-001...</div>
+      <div class="session-turns">12 turns</div>
+    </div>
+    <div class="session-item">
+      <div class="session-dot" style="background: #4ade80;"></div>
+      <div class="session-id">abc123f...</div>
+      <div class="session-turns">8 turns</div>
+    </div>
+    <div class="session-item">
+      <div class="session-dot" style="background: #fbbf24;"></div>
+      <div class="session-id">xyz789a...</div>
+      <div class="session-turns">3 turns</div>
+    </div>
+    <div class="session-item">
+      <div class="session-dot" style="background: #606080;"></div>
+      <div class="session-id">old-456...</div>
+      <div class="session-turns">ended</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM: Event Stream -->
+<div class="bottom-strip">
+  <div class="panel stream-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        Event Stream
+      </div>
+      <span class="panel-badge" style="background: rgba(74,222,128,0.15); color: #4ade80;">● Live</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:04</span>
+      <span class="event-type" style="background: rgba(96,165,250,0.15); color: #60a5fa;">TURN</span>
+      <span class="event-detail">tokens: 10.1K · tools: Write, Edit · session: demo-001</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:03</span>
+      <span class="event-type" style="background: rgba(167,139,250,0.15); color: #a78bfa;">AGENT</span>
+      <span class="event-detail">Explore completed (30s) · tokens: 2.1K</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:02</span>
+      <span class="event-type" style="background: rgba(167,139,250,0.15); color: #a78bfa;">AGENT</span>
+      <span class="event-detail">Explore started · type: general-purpose</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:02</span>
+      <span class="event-type" style="background: rgba(96,165,250,0.15); color: #60a5fa;">TURN</span>
+      <span class="event-detail">tokens: 19.2K · tools: Agent, Read, Grep · skill: brainstorming</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:01</span>
+      <span class="event-type" style="background: rgba(96,165,250,0.15); color: #60a5fa;">TURN</span>
+      <span class="event-detail">tokens: 15.5K · tools: Bash, Read · session: demo-001</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:00</span>
+      <span class="event-type" style="background: rgba(74,222,128,0.15); color: #4ade80;">START</span>
+      <span class="event-detail">Session started · model: qwen3.6-plus</span>
+    </div>
+  </div>
+
+  <div class="panel stream-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </span>
+        Session Activity Log
+      </div>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:04</span>
+      <span class="event-type" style="background: rgba(74,222,128,0.15); color: #4ade80;">MEM</span>
+      <span class="event-detail">Memory written: project_current.md (1.2KB)</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:03</span>
+      <span class="event-type" style="background: rgba(74,222,128,0.15); color: #4ade80;">MEM</span>
+      <span class="event-detail">Memory read: user_pref.md</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:02</span>
+      <span class="event-type" style="background: rgba(251,191,36,0.15); color: #fbbf24;">HOOK</span>
+      <span class="event-detail">Hook executed: TurnEndHook (142ms)</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">10:01</span>
+      <span class="event-type" style="background: rgba(251,191,36,0.15); color: #fbbf24;">HOOK</span>
+      <span class="event-detail">Hook executed: SessionStartHook (38ms)</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">09:58</span>
+      <span class="event-type" style="background: rgba(239,68,68,0.15); color: #ef4444;">ERR</span>
+      <span class="event-detail">Hook timeout: SessionEndHook (2003ms)</span>
+    </div>
+    <div class="event-item">
+      <span class="event-time">09:55</span>
+      <span class="event-type" style="background: rgba(248,113,113,0.15); color: #f87171;">SKILL</span>
+      <span class="event-detail">superpowers:simplify invoked (review code)</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </span>
+        Session Quick Jump
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <div style="background: #161625; border: 1px solid #1e1e32; border-radius: 8px; padding: 12px; cursor: pointer; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#7c6fe0'" onmouseout="this.style.borderColor='#1e1e32'">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: #4ade80;"></div>
+          <span style="font-size: 11px; font-weight: 600; font-family: monospace;">demo-001</span>
+        </div>
+        <div style="font-size: 10px; color: #606080;">12 turns · 35.2K tokens · $0.04</div>
+      </div>
+      <div style="background: #161625; border: 1px solid #1e1e32; border-radius: 8px; padding: 12px; cursor: pointer; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#7c6fe0'" onmouseout="this.style.borderColor='#1e1e32'">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: #4ade80;"></div>
+          <span style="font-size: 11px; font-weight: 600; font-family: monospace;">abc123f</span>
+        </div>
+        <div style="font-size: 10px; color: #606080;">8 turns · 22.1K tokens · $0.02</div>
+      </div>
+      <div style="background: #161625; border: 1px solid #1e1e32; border-radius: 8px; padding: 12px; cursor: pointer; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#7c6fe0'" onmouseout="this.style.borderColor='#1e1e32'">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: #fbbf24;"></div>
+          <span style="font-size: 11px; font-weight: 600; font-family: monospace;">xyz789a</span>
+        </div>
+        <div style="font-size: 10px; color: #606080;">3 turns · 8.5K tokens · $0.01</div>
+      </div>
+      <div style="background: #161625; border: 1px solid #1e1e32; border-radius: 8px; padding: 12px; cursor: pointer; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#7c6fe0'" onmouseout="this.style.borderColor='#1e1e32'">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: #606080;"></div>
+          <span style="font-size: 11px; font-weight: 600; font-family: monospace;">old-456</span>
+        </div>
+        <div style="font-size: 10px; color: #606080;">ended · 25 turns · $0.08</div>
+      </div>
+    </div>
+    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #161625; display: flex; justify-content: space-between;">
+      <span style="font-size: 10px; color: #606080;">Total across sessions</span>
+    </div>
+    <div style="display: flex; gap: 16px; margin-top: 6px;">
+      <div style="text-align: center;"><div style="font-size: 16px; font-weight: 700; color: #60a5fa;">48</div><div style="font-size: 9px; color: #606080;">Turns</div></div>
+      <div style="text-align: center;"><div style="font-size: 16px; font-weight: 700; color: #a78bfa;">65.8K</div><div style="font-size: 9px; color: #606080;">Tokens</div></div>
+      <div style="text-align: center;"><div style="font-size: 16px; font-weight: 700; color: #4ade80;">$0.15</div><div style="font-size: 9px; color: #606080;">Cost</div></div>
+      <div style="text-align: center;"><div style="font-size: 16px; font-weight: 700; color: #fbbf24;">8</div><div style="font-size: 9px; color: #606080;">Agents</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Generate heatmap
+const heatmap = document.getElementById('heatmap');
+const colors = ['#161625', '#1a2e1a', '#1a3e1a', '#2a5e2a', '#3a7e3a', '#4ade80'];
+for (let day = 0; day < 7; day++) {
+  for (let hour = 0; hour < 24; hour++) {
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-cell';
+    const intensity = Math.random();
+    let color;
+    if (intensity < 0.3) color = colors[0];
+    else if (intensity < 0.5) color = colors[1];
+    else if (intensity < 0.7) color = colors[2];
+    else if (intensity < 0.85) color = colors[3];
+    else if (intensity < 0.95) color = colors[4];
+    else color = colors[5];
+    cell.style.background = color;
+    cell.title = `Day ${day + 1}, ${hour}:00`;
+    heatmap.appendChild(cell);
+  }
+}
+</script>
+</body>
+</html>

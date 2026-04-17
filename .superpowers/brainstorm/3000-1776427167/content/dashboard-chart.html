@@ -1,0 +1,83 @@
+<h2>Dashboard — Sessions Active 实时曲线</h2>
+<p class="subtitle">Dashboard 上的 Sessions Active 不再是静态列表，而是一个随时间变化的折线图，实时刷新。点击跳转到统一 Sessions 页面。</p>
+
+<div class="mockup">
+  <div class="mockup-header">Dashboard Preview — Sessions Active Panel</div>
+  <div class="mockup-body" style="padding: 16px;">
+    <div style="background: var(--bg-secondary, #1a1a2e); border: 1px solid var(--border, #333); border-radius: 8px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 20px; height: 20px; background: rgba(96,165,250,0.2); color: #60a5fa; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px;">◆</div>
+          <span style="font-size: 13px; font-weight: 600;">Sessions Activity</span>
+        </div>
+        <div style="display: flex; gap: 16px; font-size: 11px;">
+          <span style="color: var(--text-muted, #888);">Active: <b style="color: #4ade80;">3</b></span>
+          <span style="color: var(--text-muted, #888);">Events: <b>121</b></span>
+          <span style="color: var(--text-muted, #888);">Turns: <b>121</b></span>
+        </div>
+      </div>
+      <div style="height: 120px; display: flex; align-items: flex-end; gap: 2px; padding: 8px 0; border-bottom: 1px solid #333;">
+        <div style="flex: 1; background: #60a5fa40; height: 10%; border-radius: 2px 2px 0 0; position: relative;" title="00:00: 2 events"></div>
+        <div style="flex: 1; background: #60a5fa40; height: 5%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa40; height: 3%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa40; height: 8%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa40; height: 15%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa60; height: 25%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa80; height: 45%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5faa0; height: 60%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fab0; height: 70%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fac0; height: 55%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fab0; height: 40%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5faa0; height: 35%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa90; height: 50%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5faa0; height: 65%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fab0; height: 80%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fac0; height: 90%; border-radius: 2px 2px 0 0; box-shadow: 0 0 8px #60a5fa60;"></div>
+        <div style="flex: 1; background: #60a5fac0; height: 75%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fab0; height: 55%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5faa0; height: 30%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa90; height: 10%; border-radius: 2px 2px 0 0;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-top: 4px;">
+        <span>-2h</span><span>-1.5h</span><span>-1h</span><span>-30m</span><span>now</span>
+      </div>
+    </div>
+    <p style="text-align: center; margin-top: 12px; color: var(--accent, #7c6fe0); font-size: 12px;">⬆ 点击此卡片进入统一 Sessions 页面</p>
+  </div>
+</div>
+
+<div class="section">
+  <h3>实现方式</h3>
+  <p class="subtitle">不用第三方图表库，用纯 CSS bar chart（和现有 Heatmap 风格一致），每 5 秒刷新时重绘。</p>
+  <ul>
+    <li><b>数据粒度：</b>每 5 分钟一个柱（从 events.jsonl 按时间戳聚合）</li>
+    <li><b>窗口：</b>显示最近 2 小时（24 根柱子）</li>
+    <li><b>颜色：</b>按事件类型分层 — turn_end 用 #60a5fa（蓝），agent 事件用 #fbbf24（金）</li>
+    <li><b>hover 提示：</b>显示该时段的事件数和 session ID</li>
+    <li><b>点击：</b>跳转到新的统一 Sessions 页面</li>
+  </ul>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>柱状图（上图所示）</h3>
+      <p>每 5 分钟一根柱子，高度 = 事件数。简单、轻量、和现有风格一致。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>折线图</h3>
+      <p>用 SVG 画平滑折线 + 面积填充。更好看，但需要新增 SVG 组件。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>堆叠面积图</h3>
+      <p>按事件类型分层堆叠（turn_end、agent、session）。信息最丰富，但实现最复杂。</p>
+    </div>
+  </div>
+</div>

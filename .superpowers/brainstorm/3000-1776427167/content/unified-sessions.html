@@ -1,0 +1,125 @@
+<h2>统一 Sessions 页面 — 双层视图</h2>
+<p class="subtitle">一个页面包含所有信息：顶部聚合指标 + 中间趋势图 + 下方 Session 卡片 + 点击展开时间线。</p>
+
+<div class="mockup">
+  <div class="mockup-header">Unified Sessions Page</div>
+  <div class="mockup-body" style="padding: 16px;">
+
+    <!-- Section 1: Aggregate Stats -->
+    <div style="background: var(--bg-secondary, #1a1a2e); border: 1px solid var(--border, #333); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+      <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted, #888);">AGGREGATE STATS</div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 80px; text-align: center; padding: 8px; background: rgba(96,165,250,0.1); border-radius: 6px;">
+          <div style="font-size: 10px; color: #888;">SESSIONS</div>
+          <div style="font-size: 20px; font-weight: 700; color: #60a5fa;">24</div>
+        </div>
+        <div style="flex: 1; min-width: 80px; text-align: center; padding: 8px; background: rgba(74,222,128,0.1); border-radius: 6px;">
+          <div style="font-size: 10px; color: #888;">EVENTS</div>
+          <div style="font-size: 20px; font-weight: 700; color: #4ade80;">121</div>
+        </div>
+        <div style="flex: 1; min-width: 80px; text-align: center; padding: 8px; background: rgba(251,191,36,0.1); border-radius: 6px;">
+          <div style="font-size: 10px; color: #888;">TURNS</div>
+          <div style="font-size: 20px; font-weight: 700; color: #fbbf24;">121</div>
+        </div>
+        <div style="flex: 1; min-width: 80px; text-align: center; padding: 8px; background: rgba(248,113,113,0.1); border-radius: 6px;">
+          <div style="font-size: 10px; color: #888;">TOKENS</div>
+          <div style="font-size: 20px; font-weight: 700; color: #f87171;">48.0M</div>
+        </div>
+        <div style="flex: 1; min-width: 80px; text-align: center; padding: 8px; background: rgba(192,132,252,0.1); border-radius: 6px;">
+          <div style="font-size: 10px; color: #888;">COST</div>
+          <div style="font-size: 20px; font-weight: 700; color: #c084fc;">$49.97</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Hourly Event Rate Chart -->
+    <div style="background: var(--bg-secondary, #1a1a2e); border: 1px solid var(--border, #333); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+      <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted, #888);">EVENT RATE (last 2 hours)</div>
+      <div style="height: 80px; display: flex; align-items: flex-end; gap: 2px; padding: 4px 0; border-bottom: 1px solid #333;">
+        <div style="flex: 1; background: #60a5fa40; height: 10%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa40; height: 5%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa40; height: 3%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa40; height: 8%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa60; height: 15%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa80; height: 25%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5faa0; height: 45%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fab0; height: 60%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fac0; height: 90%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5faa0; height: 50%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa90; height: 30%; border-radius: 2px 2px 0 0;"></div>
+        <div style="flex: 1; background: #60a5fa80; height: 10%; border-radius: 2px 2px 0 0;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-top: 4px;">
+        <span>-2h</span><span>-1h</span><span>now</span>
+      </div>
+    </div>
+
+    <!-- Section 3: Session Cards -->
+    <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted, #888);">SESSIONS</div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+      <div style="background: var(--bg-secondary, #1a1a2e); border: 1px solid #4ade80; border-radius: 8px; padding: 10px; cursor: pointer;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-family: monospace; font-size: 12px;">f7a3c2d1...</span>
+          <span style="background: rgba(74,222,128,0.2); color: #4ade80; font-size: 10px; padding: 2px 6px; border-radius: 4px;">active</span>
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 6px;">
+          <span>12 events</span> · <span>3 min ago</span> · <span>5 tools</span>
+        </div>
+        <div style="font-size: 10px; color: #666; margin-top: 4px; font-family: monospace;">project: visual-view-claude-code-coding</div>
+      </div>
+      <div style="background: var(--bg-secondary, #1a1a2e); border: 1px solid var(--border, #333); border-radius: 8px; padding: 10px; cursor: pointer; opacity: 0.6;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-family: monospace; font-size: 12px;">a1b2c3d4...</span>
+          <span style="background: rgba(239,68,68,0.2); color: #ef4444; font-size: 10px; padding: 2px 6px; border-radius: 4px;">ended</span>
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 6px;">
+          <span>45 events</span> · <span>2h ago</span> · <span>12 tools</span>
+        </div>
+        <div style="font-size: 10px; color: #666; margin-top: 4px; font-family: monospace;">project: d--workspace-visual-view</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top: 12px;">
+  <div class="mockup-header">Click Session Card → Expand Timeline</div>
+  <div class="mockup-body" style="padding: 16px;">
+    <div style="background: var(--bg-secondary, #1a1a2e); border: 2px solid var(--accent, #7c6fe0); border-radius: 8px; padding: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-family: monospace; font-size: 12px; font-weight: 600;">f7a3c2d1...</span>
+        <span style="background: rgba(74,222,128,0.2); color: #4ade80; font-size: 10px; padding: 2px 6px; border-radius: 4px;">active</span>
+      </div>
+
+      <!-- Collapsed timeline -->
+      <div style="border-left: 2px solid #333; padding-left: 12px; margin-left: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+          <span style="font-size: 10px; color: #888; font-family: monospace; min-width: 60px;">14:32:01</span>
+          <span style="font-size: 10px; background: rgba(96,165,250,0.2); color: #60a5fa; padding: 1px 6px; border-radius: 3px;">session_start</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+          <span style="font-size: 10px; color: #888; font-family: monospace; min-width: 60px;">14:32:15</span>
+          <span style="font-size: 10px; background: rgba(74,222,128,0.2); color: #4ade80; padding: 1px 6px; border-radius: 3px;">turn_end</span>
+          <span style="font-size: 10px; color: #666; font-family: monospace;">Bash, Read, Edit</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+          <span style="font-size: 10px; color: #888; font-family: monospace; min-width: 60px;">14:33:02</span>
+          <span style="font-size: 10px; background: rgba(251,191,36,0.2); color: #fbbf24; padding: 1px 6px; border-radius: 3px;">agent_start</span>
+          <span style="font-size: 10px; color: #666;">Explore</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+          <span style="font-size: 10px; color: #888; font-family: monospace; min-width: 60px;">14:33:45</span>
+          <span style="font-size: 10px; background: rgba(251,191,36,0.2); color: #fbbf24; padding: 1px 6px; border-radius: 3px;">agent_end</span>
+          <span style="font-size: 10px; color: #4ade80;">completed</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+          <span style="font-size: 10px; color: #888; font-family: monospace; min-width: 60px;">14:34:01</span>
+          <span style="font-size: 10px; background: rgba(74,222,128,0.2); color: #4ade80; padding: 1px 6px; border-radius: 3px;">turn_end</span>
+          <span style="font-size: 10px; color: #666; font-family: monospace;">Write, TodoWrite</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 12px;">Timeline 展示该 Session 的所有事件，按时间排列，显示事件类型、时间、使用的工具。active Session 有绿色左边框。</p>

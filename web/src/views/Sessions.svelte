@@ -74,7 +74,7 @@
   <!-- Event Rate Chart -->
   <div class="chart-panel">
     <div class="chart-header">
-      <span class="chart-title">Event Rate (last 2 hours)</span>
+      <span class="chart-title">Event Rate (last 24 hours)</span>
     </div>
     {#if er.buckets.length === 0}
       <div class="empty-msg">No events in last 2 hours.</div>

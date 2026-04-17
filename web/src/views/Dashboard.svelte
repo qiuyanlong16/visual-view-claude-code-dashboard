@@ -329,7 +329,7 @@
     </div>
 
     <!-- Skills & Plugins -->
-    <div class="d-panel" style="animation-delay: 0.62s">
+    <div class="d-panel d-skills-plugins" style="animation-delay: 0.62s">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(248,113,113,0.2); color: #f87171;">
@@ -351,8 +351,8 @@
       {/if}
     </div>
 
-    <!-- Sessions Activity Chart (spans 2 columns, Row 3) -->
-    <div class="d-panel d-sessions-activity" style="animation-delay: 0.65s" on:click={() => navigate("sessions")} role="button" tabindex="0">
+    <!-- Sessions Activity Chart (full width, Row 3) -->
+    <div class="d-panel" style="animation-delay: 0.65s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
@@ -397,7 +397,7 @@
       </div>
     </div>
 
-    <div class="d-panel" style="animation-delay: 0.8s">
+    <div class="d-panel d-bottom-quick-jump" style="animation-delay: 0.8s">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
@@ -457,11 +457,12 @@
 
   /* Grid */
   .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 320px; grid-template-rows: auto auto auto auto; gap: 12px; }
-  .dashboard-bottom { display: grid; grid-template-columns: 1fr 1fr 320px; gap: 12px; margin-top: 12px; }
+  .dashboard-bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px; }
 
   /* Panel overrides */
   .d-chart-panel { grid-column: 1 / 4; }
-  .d-sessions-activity { grid-column: 3 / 5; }
+  .d-skills-plugins { grid-column: 3 / 5; }
+  .d-bottom-quick-jump { grid-column: 2 / 4; }
   .d-panel { min-height: 100px; }
   .d-panel[role="button"] { cursor: pointer; }
   .d-panel[role="button"]:hover { border-color: #3a3a5a; }

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #e0e0f0; background: #0f0f1a; }
+h2 { color: #7c6fe0; border-bottom: 1px solid #2a2a40; padding-bottom: 8px; }
+.subtitle { color: #9090b0; margin-bottom: 20px; }
+.layout { border: 1px solid #2a2a40; border-radius: 10px; padding: 15px; margin: 15px 0; cursor: pointer; transition: all 0.2s; background: #161625; }
+.layout:hover { border-color: #7c6fe0; background: #1a1a30; }
+.layout.selected { border-color: #4ade80; background: #1a2e1a; box-shadow: 0 0 12px rgba(74,222,128,0.2); }
+.rec-badge { display: inline-block; background: #4ade80; color: #0f0f1a; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 8px; }
+.grid { display: grid; gap: 6px; }
+.widget { background: #1e1e32; border: 1px solid #2a2a40; border-radius: 6px; padding: 10px; text-align: center; font-size: 11px; color: #9090b0; min-height: 50px; display: flex; align-items: center; justify-content: center; }
+.widget-title { color: #7c6fe0; font-weight: 600; }
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.span-row2 { grid-row: span 2; }
+.label { font-size: 13px; font-weight: 600; color: #e0e0f0; margin-bottom: 4px; }
+.desc { font-size: 12px; color: #606080; }
+.sidebar-note { width: 40px; background: #161625; border: 1px solid #2a2a40; border-radius: 4px; padding: 4px; text-align: center; font-size: 9px; color: #606080; writing-mode: vertical-lr; }
+.row { display: flex; gap: 6px; }
+.col { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+</style>
+<script>
+function toggleSelect(el) {
+  document.querySelectorAll('.layout').forEach(l => l.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</head>
+<body>
+<h2>Dashboard Homepage Layout Options</h2>
+<p class="subtitle">Click a layout to select it. Each shows how the 6+ modules arrange on screen.</p>
+
+<div class="layout" data-choice="a" onclick="toggleSelect(this)">
+  <div class="rec-badge">RECOMMENDED</div>
+  <div class="label">Option A: Grid Dashboard — 6-Panel Bento Layout</div>
+  <div class="desc">All key metrics visible at once in a responsive grid. No scrolling needed for top-level view.</div>
+  <div class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr; margin-top: 10px;">
+    <div class="widget span-2" style="background:#1a2744; border-color:#2a4a6a;">
+      <div>📊 <strong>Token & Cost Monitoring</strong><br><span style="color:#60a5fa;font-size:18px;font-weight:700;">$0.0042</span> <span style="color:#606080">| 35.2K tokens</span></div>
+    </div>
+    <div class="widget" style="background:#1a2e1a; border-color:#2a4a2a;">
+      <div>🤖 <strong>Agent Activity</strong><br><span style="color:#4ade80;font-size:16px;font-weight:700;">3 running</span></div>
+    </div>
+    <div class="widget" style="background:#2e1a2e; border-color:#4a2a4a;">
+      <div>🔧 <strong>Tool Calls</strong><br><span style="color:#a78bfa;font-size:16px;font-weight:700;">47 total</span></div>
+    </div>
+    <div class="widget" style="background:#2e2e1a; border-color:#4a4a2a;">
+      <div>📝 <strong>Skills Used</strong><br><span style="color:#fbbf24;font-size:16px;font-weight:700;">12 calls</span></div>
+    </div>
+    <div class="widget span-3 span-row2" style="background:#0f0f1a;">
+      <div style="width:90%;">
+        <div style="color:#7c6fe0;font-weight:600;font-size:12px;margin-bottom:8px;">📈 Token Trend (24h) — Live Line Chart</div>
+        <svg width="100%" height="80" viewBox="0 0 500 80">
+          <line x1="0" y1="70" x2="500" y2="70" stroke="#2a2a40" stroke-width="1"/>
+          <polyline points="0,60 40,45 80,55 120,30 160,40 200,25 240,50 280,35 320,20 360,45 400,30 440,55 480,15" fill="none" stroke="#60a5fa" stroke-width="2"/>
+          <polyline points="0,50 40,55 80,60 120,50 160,55 200,45 240,60 280,50 320,40 360,55 400,50 440,60 480,45" fill="none" stroke="#a78bfa" stroke-width="2"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;color:#606080;font-size:10px;margin-top:4px;">
+          <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>Now</span>
+        </div>
+        <div style="margin-top:6px;font-size:10px;color:#606080;"><span style="color:#60a5fa">● Input</span> <span style="color:#a78bfa;margin-left:10px;">● Output</span></div>
+      </div>
+    </div>
+    <div class="widget" style="background:#1e1e32; min-height:120px;">
+      <div style="width:100%;text-align:left;">
+        <div style="color:#fb923c;font-weight:600;font-size:11px;margin-bottom:6px;">🧠 Memory Files</div>
+        <div style="font-size:10px;color:#9090b0;">user_pref.md ✓<br>project_current.md ✓<br>feedback_patterns.md ✓</div>
+      </div>
+    </div>
+    <div class="widget" style="background:#1e1e32; min-height:120px;">
+      <div style="width:100%;text-align:left;">
+        <div style="color:#f87171;font-weight:600;font-size:11px;margin-bottom:6px;">⚠️ Error Inspection</div>
+        <div style="font-size:10px;color:#9090b0;">No errors in last 2h<br><span style="color:#606080;">Last: timeout @ 08:14</span></div>
+      </div>
+    </div>
+    <div class="widget span-2" style="background:#1e1e32; min-height:80px;">
+      <div style="width:100%;text-align:left;">
+        <div style="color:#60a5fa;font-weight:600;font-size:11px;margin-bottom:4px;">📋 Event Stream (latest)</div>
+        <div style="font-size:10px;color:#9090b0;font-family:monospace;">[10:04] turn_end — tokens: 10.1K — tools: Write, Edit</div>
+        <div style="font-size:10px;color:#606080;font-family:monospace;">[10:02] agent_end — Explore completed (30s)</div>
+      </div>
+    </div>
+    <div class="widget" style="background:#1e1e32; min-height:80px;">
+      <div style="width:100%;text-align:left;">
+        <div style="color:#22d3ee;font-weight:600;font-size:11px;margin-bottom:4px;">📁 Sessions</div>
+        <div style="font-size:10px;color:#9090b0;">3 active | 12 completed</div>
+        <div style="font-size:10px;color:#4ade80;margin-top:2px;">● Live: demo-001</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layout" data-choice="b" onclick="toggleSelect(this)">
+  <div class="label">Option B: Column Layout — Left Metrics + Center Chart + Right Stream</div>
+  <div class="desc">Three-column layout. Summary cards on left, main chart center, live event stream on right.</div>
+  <div class="row" style="margin-top:10px;">
+    <div class="col" style="max-width:200px;">
+      <div class="widget" style="background:#1a2744;">💰 Cost: $0.0042</div>
+      <div class="widget" style="background:#1a2e1a;">🤖 Agents: 3</div>
+      <div class="widget" style="background:#2e1a2e;">🔧 Tools: 47</div>
+      <div class="widget" style="background:#2e2e1a;">📝 Skills: 12</div>
+      <div class="widget" style="background:#1e1e32;">🧠 Memory: 5 files</div>
+      <div class="widget" style="background:#1e1e32;">⚠️ Errors: 0</div>
+    </div>
+    <div class="col" style="flex:2;">
+      <div class="widget" style="background:#0f0f1a;min-height:200px;">
+        <div style="width:90%;">
+          <div style="color:#7c6fe0;font-weight:600;font-size:12px;">📈 Real-time Token & Cost Trend</div>
+          <svg width="100%" height="120" viewBox="0 0 500 120"><line x1="0" y1="110" x2="500" y2="110" stroke="#2a2a40"/><polyline points="0,90 50,70 100,80 150,40 200,60 250,35 300,75 350,50 400,30 450,65 500,20" fill="none" stroke="#60a5fa" stroke-width="2.5"/></svg>
+        </div>
+      </div>
+      <div class="widget" style="background:#0f0f1a;min-height:150px;">
+        <div style="width:90%;">
+          <div style="color:#a78bfa;font-weight:600;font-size:12px;">📊 Agent Chain & Tool Breakdown</div>
+          <div style="font-size:10px;color:#9090b0;margin-top:8px;">Agent tree + horizontal bar chart of tool usage</div>
+        </div>
+      </div>
+    </div>
+    <div class="col" style="max-width:220px;">
+      <div class="widget" style="background:#1e1e32;min-height:180px;">
+        <div style="width:100%;text-align:left;">
+          <div style="color:#60a5fa;font-weight:600;font-size:11px;">📋 Live Event Stream</div>
+          <div style="font-size:10px;color:#9090b0;font-family:monospace;margin-top:6px;">[10:04] turn_end<br>[10:03] agent_end<br>[10:02] agent_start<br>[10:02] turn_end<br>[10:01] turn_end</div>
+        </div>
+      </div>
+      <div class="widget" style="background:#1e1e32;">📁 Sessions: 3 active</div>
+    </div>
+  </div>
+</div>
+
+<div class="layout" data-choice="c" onclick="toggleSelect(this)">
+  <div class="label">Option C: Tabbed Overview — Top KPI Strip + Tabbed Detail Panels</div>
+  <div class="desc">KPI summary row always visible at top. Below it, tabs switch between monitoring views.</div>
+  <div style="margin-top:10px;">
+    <div class="row" style="margin-bottom:10px;">
+      <div class="widget" style="flex:1;background:#1a2744;">💰 $0.0042</div>
+      <div class="widget" style="flex:1;background:#1a2e1a;">🤖 3 Agents</div>
+      <div class="widget" style="flex:1;background:#2e1a2e;">🔧 47 Tools</div>
+      <div class="widget" style="flex:1;background:#2e2e1a;">📝 12 Skills</div>
+      <div class="widget" style="flex:1;background:#1e1e32;">🧠 5 Files</div>
+      <div class="widget" style="flex:1;background:#1e1e32;">⚠️ 0 Errors</div>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:10px;">
+      <span style="background:#7c6fe0;color:white;padding:4px 14px;border-radius:4px;font-size:12px;">Token & Cost</span>
+      <span style="background:#1e1e32;padding:4px 14px;border-radius:4px;font-size:12px;">Agent Chain</span>
+      <span style="background:#1e1e32;padding:4px 14px;border-radius:4px;font-size:12px;">Tool Calls</span>
+      <span style="background:#1e1e32;padding:4px 14px;border-radius:4px;font-size:12px;">Memory</span>
+      <span style="background:#1e1e32;padding:4px 14px;border-radius:4px;font-size:12px;">Events</span>
+    </div>
+    <div class="widget" style="background:#0f0f1a;min-height:250px;">
+      <div style="color:#9090b0;font-size:14px;">Selected tab content fills this area</div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px;color:#606080;font-size:12px;">I recommend <strong>Option A</strong> — the bento grid gives you a true "command center" feel where all key metrics are visible simultaneously without clicking tabs or scrolling. It's the best fit for a monitoring dashboard homepage.</p>
+</body>
+</html>

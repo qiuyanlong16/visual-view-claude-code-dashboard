@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #e0e0e0; background: #1a1a2e; }
+h2 { color: #82aaff; border-bottom: 1px solid #333; padding-bottom: 8px; }
+h3 { color: #c3e88d; margin-top: 30px; }
+.option { border: 1px solid #444; border-radius: 8px; padding: 20px; margin: 15px 0; cursor: pointer; transition: all 0.2s; background: #16213e; }
+.option:hover { border-color: #82aaff; background: #1a2744; }
+.option[data-choice="rec"] { border-color: #c3e88d; background: #1a2e1a; }
+.option[data-choice="rec"]:hover { border-color: #c3e88d; background: #1e3520; }
+.rec-badge { display: inline-block; background: #c3e88d; color: #1a1a2e; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+.code { background: #0d0d1a; padding: 10px 15px; border-radius: 4px; font-family: monospace; font-size: 13px; overflow-x: auto; color: #a6accd; }
+ul { padding-left: 20px; }
+li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<h2>Architecture Approaches</h2>
+<p class="subtitle">3 ways to structure the event server + hook integration</p>
+
+<div class="option" data-choice="a" onclick="toggleSelect(this)">
+  <h3>Option A: Hook Scripts → Node Express Server → Svelte SPA</h3>
+  <p><strong>Flow:</strong> Claude Code fires hooks → small Node.js scripts POST events → Express server receives events, persists to SQLite, serves SSE stream → Svelte app connects via EventSource</p>
+  <ul>
+    <li><strong>Pros:</strong> Clean separation, SQLite gives persistent history, mature ecosystem</li>
+    <li><strong>Cons:</strong> Two processes (hook script + server), more moving parts</li>
+    <li><strong>Best for:</strong> Projects where event history needs to survive server restarts</li>
+  </ul>
+</div>
+
+<div class="option" data-choice="rec" onclick="toggleSelect(this)">
+  <div class="rec-badge">RECOMMENDED</div>
+  <h3>Option B: Hook Script → Tiny Hono Server (edge-style) → Svelte SPA</h3>
+  <p><strong>Flow:</strong> Same hooks → POST to a Hono (Node runtime) server → in-memory event buffer + JSONL file for persistence → SSE endpoint → Svelte app with stores</p>
+  <ul>
+    <li><strong>Pros:</strong> Minimal footprint, Hono's SSE helper is elegant, JSONL is perfect for event streams (append-only, easy to replay), single dependency tree</li>
+    <li><strong>Cons:</strong> JSONL has no query layer (fine for replay, harder for analytics without loading all events)</li>
+    <li><strong>Best for:</strong> This project — dashboard + analytics where recent events matter most</li>
+  </ul>
+</div>
+
+<div class="option" data-choice="c" onclick="toggleSelect(this)">
+  <h3>Option C: All-in-One Svelte Dev Server with Built-in API</h3>
+  <p><strong>Flow:</strong> Hook scripts POST to the Vite dev server itself (using +server.js routes) → Svelte handles both UI and API in one process</p>
+  <ul>
+    <li><strong>Pros:</strong> Single process to start/stop, simplest dev experience, SvelteKit handles SSE natively</li>
+    <li><strong>Cons:</strong> Dev server in production needs replacement, Vite dev server isn't meant for long-running servers</li>
+    <li><strong>Best for:</strong> Rapid prototyping, not for a persistent monitoring tool</li>
+  </ul>
+</div>
+
+<p style="margin-top: 30px; color: #888; font-size: 14px;">I recommend <strong>Option B</strong> — Hono gives you a lightweight server that can run long-term, JSONL is the right data structure for event streams, and it cleanly separates the API server from the Svelte frontend for deployment flexibility.</p>
+</body>
+</html>

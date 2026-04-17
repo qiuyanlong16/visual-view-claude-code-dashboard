@@ -1,0 +1,11 @@
+{
+  "name": "claude-code-observability",
+  "private": true,
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "server": "npm run dev -w server",
+    "dev": "npm run dev -w web",
+    "test": "npm run test -w server && npm run test -w web",
+    "install:all": "npm install"
+  }
+}

@@ -258,17 +258,19 @@ export function statsRoutes(app) {
   });
 
   app.get("/stats/events-rate", (c) => {
+    const hours = parseInt(c.req.query("hours") || "2");
+    const windowMs = hours * 60 * 60 * 1000;
     const events = getEvents(null, 10000);
     const now = new Date();
-    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    const cutoff = new Date(now.getTime() - windowMs);
 
-    // Filter events to last 2 hours
+    // Filter events to time window
     const recent = events.filter((e) => {
       const ts = e.timestamp || e.receivedAt;
-      return ts && new Date(ts) >= twoHoursAgo;
+      return ts && new Date(ts) >= cutoff;
     });
 
-    // Group into 5-minute buckets (24 buckets max)
+    // Group into 5-minute buckets
     const bucketMap = new Map();
     for (const evt of recent) {
       const ts = new Date(evt.timestamp || evt.receivedAt);
@@ -316,6 +318,7 @@ export function statsRoutes(app) {
       buckets,
       active,
       totalEvents: recent.length,
+      hours,
     });
   });
 }

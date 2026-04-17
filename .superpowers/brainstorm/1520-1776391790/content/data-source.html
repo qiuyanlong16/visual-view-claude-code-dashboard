@@ -1,0 +1,36 @@
+<h2>Recommended Data Source: Hook + Local WebSocket Server</h2>
+<p class="subtitle">Best balance of real-time, reliability, and implementation complexity</p>
+
+<div class="section">
+<h3>Why Option A (Hooks) is recommended</h3>
+
+<div class="pros-cons">
+<div class="pros">
+<h4>Pros</h4>
+<ul>
+<li><strong>Native integration</strong> — Claude Code's hooks (settings.json) fire on session start, turn end, subagent start/end — the natural event boundaries you want to monitor</li>
+<li><strong>Real-time</strong> — hooks fire immediately, events pushed via WebSocket to the web UI</li>
+<li><strong>Low complexity</strong> — a small hook script sends JSON to a local server; no protocol design or MCP spec to follow</li>
+<li><strong>Memory access</strong> — hooks can read .claude/ directory contents (memory files, plans, etc.) and include them in events</li>
+<li><strong>No Claude Code config changes per project</strong> — hooks are set once globally</li>
+</ul>
+</div>
+<div class="cons">
+<h4>Cons</h4>
+<ul>
+<li>Granularity limited to hook trigger points — can't capture every single tool call mid-turn</li>
+<li>Transcript data (full turn content) is only available at turn boundaries, not streaming</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h3>Architecture Overview</h3>
+<p style="font-family: monospace; font-size: 14px; background: #1a1a2e; color: #eee; padding: 15px; border-radius: 6px; line-height: 1.6;">
+Claude Code ──(hooks fire)──► Hook Script<br>
+Hook Script ──(HTTP POST)──► Local Node Server<br>
+Local Node Server ──(WebSocket)──► Web UI Dashboard<br>
+Web UI ◄── real-time events ◄── Server
+</p>
+</div>

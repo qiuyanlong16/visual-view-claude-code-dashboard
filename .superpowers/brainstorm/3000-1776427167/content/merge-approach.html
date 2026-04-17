@@ -1,0 +1,45 @@
+<h2>Live Feed & Session Overview — 合并方案</h2>
+<p class="subtitle">目前 Live Feed 是原始事件流，Session Overview 是聚合卡片，两者功能重叠。你想合并成一个更有意义的页面。先看以下三个方向：</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>统一 Session 页面 — 时间线 + 详情</h3>
+      <p>左侧 Session 列表（可点击），右侧是该 Session 的时间线视图（带过滤/展开）。点击 KPI 上的 "Sessions Active" 跳转到这个统一页面。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Dashboard 图形化 — 保留两个页面</h3>
+      <p>Dashboard 的 Sessions Active 用可视化图表展示（柱状图/热力图），但 Live Feed 和 Session Overview 保持独立。KPI 点击各自跳转。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>统一 Sessions 页面 — 双层视图</h3>
+      <p>顶部：聚合指标图表（每小时事件数、活跃 Session 趋势）。中间：Session 列表卡片。点击任一 Session 展开其事件时间线。一个页面包含所有信息。</p>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>推荐：方案 C</h4>
+    <ul>
+      <li>Dashboard 的 Sessions Active 跳转这个统一页面</li>
+      <li>移除 Session Timeline 侧边栏入口（已删除）</li>
+      <li>Live Feed 的原始事件流被整合为 Session 时间线子视图</li>
+      <li>数据更直观：先看趋势，再看具体 Session</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>Trade-off</h4>
+    <ul>
+      <li>页面比现有任何一个都大，需要好的折叠/过滤</li>
+      <li>需要新增一个聚合指标 API（每 N 分钟事件数）</li>
+    </ul>
+  </div>
+</div>

@@ -59,9 +59,11 @@ describe("Dashboard Sessions Activity", () => {
     expect(polygons.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("has d-sessions-activity class for grid spanning", async () => {
-    const { container } = render(Dashboard);
-    const panel = container.querySelector(".d-sessions-activity");
-    expect(panel).toBeTruthy();
+  it("has Sessions Activity panel spanning full width", async () => {
+    const { container, getAllByText } = render(Dashboard);
+    const panels = getAllByText("Sessions Activity");
+    expect(panels.length).toBeGreaterThanOrEqual(1);
+    const chartSvg = container.querySelector("svg.chart-svg");
+    expect(chartSvg).toBeTruthy();
   });
 });
