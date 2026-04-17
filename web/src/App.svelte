@@ -1,12 +1,11 @@
 <script>
   import Sidebar from "./components/Sidebar.svelte";
   import Dashboard from "./views/Dashboard.svelte";
-  import LiveFeed from "./views/LiveFeed.svelte";
+  import Sessions from "./views/Sessions.svelte";
 
   import MemoryInspector from "./views/MemoryInspector.svelte";
   import SkillsUsage from "./views/ToolsUsage.svelte";
   import CostAnalytics from "./views/CostAnalytics.svelte";
-  import SessionOverview from "./views/SessionOverview.svelte";
   import CCPlaybook from "./views/CCPlaybook.svelte";
 
   import { connectSSE, fetchHistory } from "./stores/events.js";
@@ -20,12 +19,11 @@
 
   const views = [
     { id: "dashboard", label: "Dashboard" },
-    { id: "live", label: "Live Feed" },
+    { id: "sessions", label: "Sessions" },
 
     { id: "memory", label: "Memory Inspector" },
     { id: "tools", label: "Tools" },
     { id: "cost", label: "Cost & Tokens" },
-    { id: "overview", label: "Session Overview" },
     { id: "playbook", label: "CC Playbook" },
   ];
 
@@ -58,16 +56,14 @@
   <main class="content">
     {#if $currentRoute === "dashboard"}
       <Dashboard />
-    {:else if $currentRoute === "live"}
-      <LiveFeed />
+    {:else if $currentRoute === "sessions"}
+      <Sessions />
     {:else if $currentRoute === "memory"}
       <MemoryInspector />
     {:else if $currentRoute === "tools"}
       <SkillsUsage />
     {:else if $currentRoute === "cost"}
       <CostAnalytics />
-    {:else if $currentRoute === "overview"}
-      <SessionOverview />
     {:else if $currentRoute === "playbook"}
       <CCPlaybook />
     {/if}
