@@ -2,6 +2,9 @@
 
 A real-time web dashboard for monitoring Claude Code activity — skills invoked, agents launched, memory accessed, tokens consumed. Live updates via Server-Sent Events (SSE).
 
+<img width="1530" height="1289" alt="image" src="https://github.com/user-attachments/assets/0ea301e9-e0fa-4d2a-9b58-a0eaa51cf24d" />
+
+
 ## Architecture
 
 ```
