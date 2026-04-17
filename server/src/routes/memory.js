@@ -1,16 +1,12 @@
 import { homedir } from "node:os";
 import { readFileSync, writeFileSync, existsSync, statSync, readdirSync as fsReaddir } from "node:fs";
-import { join, dirname, basename } from "node:path";
+import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function getUserHome() {
-  return homedir();
-}
-
 function getViewClaudePath() {
-  return join(getUserHome(), ".view-claude.json");
+  return join(homedir(), ".view-claude.json");
 }
 
 export function memoryRoutes(app) {
@@ -67,6 +63,9 @@ export function memoryRoutes(app) {
         data = JSON.parse(readFileSync(configPath, "utf-8"));
       }
       if (!data.projects) data.projects = [];
+      if (action !== "add" && action !== "remove") {
+        return c.json({ error: "Invalid action. Must be 'add' or 'remove'" }, 400);
+      }
       if (action === "add" && path && !data.projects.includes(path)) {
         data.projects.push(path);
       } else if (action === "remove" && path) {
@@ -75,7 +74,7 @@ export function memoryRoutes(app) {
       writeFileSync(configPath, JSON.stringify(data, null, 2), "utf-8");
       return c.json({ projects: data.projects });
     } catch (e) {
-      return c.json({ error: e.message }, 500);
+      return c.json({ error: e.message }, 400);
     }
   });
 }
