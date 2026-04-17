@@ -12,7 +12,8 @@
   import { connectSSE, fetchHistory } from "./stores/events.js";
   import { fetchSessions } from "./stores/sessions.js";
   import { fetchStats } from "./stores/stats.js";
-  import { onMount } from "svelte";
+  import { startRealtimePolling, stopRealtimePolling } from "./stores/realtime.js";
+  import { onMount, onDestroy } from "svelte";
 
   let view = "dashboard";
   let connectionStatus = "disconnected";
@@ -33,6 +34,7 @@
     await fetchHistory();
     await fetchSessions();
     await fetchStats();
+    startRealtimePolling(5000);
 
     setInterval(() => fetchSessions(), 10000);
     setInterval(() => fetchStats(), 15000);
@@ -46,6 +48,8 @@
       });
     });
   });
+
+  onDestroy(() => stopRealtimePolling());
 </script>
 
 <div class="app">

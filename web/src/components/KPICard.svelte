@@ -9,9 +9,10 @@
   export let sparklineData = [];
   export let sub = "";
   export let delay = 0;
+  export let onClick = null;
 </script>
 
-<div class="kpi-card" style="--delay: {delay}ms">
+<div class="kpi-card" style="--delay: {delay}ms" on:click={onClick} role={onClick ? "button" : undefined} tabindex={onClick ? "0" : undefined}>
   <div class="kpi-icon" style="background: {color}20; color: {color};">
     {@html icon}
   </div>
@@ -43,6 +44,7 @@
     transition: border-color 0.2s, transform 0.2s;
   }
   .kpi-card:hover { border-color: #3a3a5a; transform: translateY(-1px); }
+  .kpi-card[role="button"] { cursor: pointer; }
   .kpi-icon {
     width: 32px; height: 32px; border-radius: 8px; display: flex;
     align-items: center; justify-content: center; margin-bottom: 10px;
