@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { readFileSync, writeFileSync, existsSync, statSync, readdirSync as fsReaddir } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, statSync, readdirSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -190,7 +190,7 @@ export function memoryRoutes(app) {
 
 function listMemoryFiles(dir) {
   if (!existsSync(dir)) return [];
-  const entries = fsReaddir(dir, { withFileTypes: true });
+  const entries = readdirSync(dir, { withFileTypes: true });
   const files = [];
 
   for (const entry of entries) {
