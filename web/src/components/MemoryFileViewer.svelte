@@ -1,17 +1,21 @@
 <script>
-  import { fileContent } from "../stores/memory.js";
-
   export let fileName = "";
   export let filePath = "";
   export let expanded = false;
 
+  let content = "";
+  let loading = false;
+
   async function loadFile() {
+    if (loading) return;
+    loading = true;
     const res = await fetch(`/memory/content?path=${encodeURIComponent(filePath)}`);
     if (res.ok) {
       const data = await res.json();
-      fileContent.set(data.content);
+      content = data.content;
       expanded = !expanded;
     }
+    loading = false;
   }
 </script>
 
@@ -19,13 +23,13 @@
   <div class="file-viewer">
     <div class="viewer-header">
       <span class="viewer-name">{fileName}</span>
-      <button class="close-btn" on:click={() => { expanded = false; fileContent.set(""); }}>×</button>
+      <button class="close-btn" on:click={() => { expanded = false; content = ""; }}>×</button>
     </div>
-    <pre class="viewer-content">{$fileContent || "Loading..."}</pre>
+    <pre class="viewer-content">{content || "Loading..."}</pre>
   </div>
 {:else}
-  <button class="file-preview-btn" on:click={loadFile}>
-    📄 {fileName} — click to view
+  <button class="file-preview-btn" on:click={loadFile} disabled={loading}>
+    {loading ? "Loading..." : `📄 ${fileName} — click to view`}
   </button>
 {/if}
 
@@ -54,4 +58,5 @@
     border-radius: 4px; font-family: monospace;
   }
   .file-preview-btn:hover { background: var(--bg-hover); }
+  .file-preview-btn:disabled { opacity: 0.5; cursor: default; }
 </style>
