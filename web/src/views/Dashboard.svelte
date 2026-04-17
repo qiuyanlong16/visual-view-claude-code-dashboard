@@ -211,7 +211,7 @@
     </div>
 
     <!-- Skills Invoked -->
-    <div class="d-panel" style="animation-delay: 0.45s" on:click={() => navigate("skills")} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.45s" on:click={() => navigate("tools")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(248,113,113,0.2); color: #f87171;">
@@ -310,7 +310,7 @@
           </span>
           Skills & Plugins
         </div>
-        <button class="d-more-btn" on:click={() => navigate("skills")}>More →</button>
+        <button class="d-more-btn" on:click={() => navigate("tools")}>More →</button>
       </div>
       {#if skillRows.length === 0}
         <div class="empty-msg">No skills or plugins used yet.</div>
