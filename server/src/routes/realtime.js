@@ -15,28 +15,46 @@ function calcCost(model, inputTokens, outputTokens) {
 }
 
 // Extract token usage from a transcript file (JSONL)
-// Returns actual billed tokens (input_tokens = new, cache_read = cached read,
-// cache_creation = newly cached, output_tokens = model output)
 function tokensFromTranscript(transcriptPath, lastModel) {
   if (!transcriptPath || !existsSync(transcriptPath)) return null;
   try {
     const lines = readFileSync(transcriptPath, "utf-8").trim().split("\n").filter(Boolean);
-    let inputTokens = 0, cacheReadTokens = 0, cacheCreationTokens = 0, outputTokens = 0;
-    let model = lastModel;
+    let inputTokens = 0, outputTokens = 0, model = lastModel;
     for (const line of lines) {
       const entry = JSON.parse(line);
       if (entry.type === "assistant" && entry.message?.usage) {
         const u = entry.message.usage;
         inputTokens += u.input_tokens || 0;
-        cacheReadTokens += u.cache_read_input_tokens || 0;
-        cacheCreationTokens += u.cache_creation_input_tokens || 0;
         outputTokens += u.output_tokens || 0;
         model = entry.message.model || model;
       }
     }
-    return { inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens, model };
+    return { inputTokens, outputTokens, model };
   } catch {
     return null;
+  }
+}
+
+// Extract tool calls from a transcript file (JSONL)
+function toolsFromTranscript(transcriptPath) {
+  if (!transcriptPath || !existsSync(transcriptPath)) return {};
+  try {
+    const lines = readFileSync(transcriptPath, "utf-8").trim().split("\n").filter(Boolean);
+    const tools = {};
+    for (const line of lines) {
+      const entry = JSON.parse(line);
+      if (entry.type === "assistant" && entry.message?.content && Array.isArray(entry.message.content)) {
+        for (const c of entry.message.content) {
+          if (c.type === "tool_use") {
+            const name = c.name || "unknown";
+            tools[name] = (tools[name] || 0) + 1;
+          }
+        }
+      }
+    }
+    return tools;
+  } catch {
+    return {};
   }
 }
 
@@ -74,6 +92,9 @@ export function realtimeRoutes(app) {
       const outputTokens = t ? t.outputTokens : 0;
       const model = t ? t.model || "unknown" : "unknown";
 
+      const tools = toolsFromTranscript(tp);
+      const transcriptToolTotal = Object.values(tools).reduce((a, b) => a + b, 0);
+
       const n = evts.length;
       const perInput = Math.round(inputTokens / n);
       const perOutput = Math.round(outputTokens / n);
@@ -87,6 +108,7 @@ export function realtimeRoutes(app) {
         totalTools += (d.tools_used || []).length;
         totalSkills += (d.skills_invoked || []).length;
       }
+      totalTools += transcriptToolTotal;
     }
 
     // Fallback for events without transcript (legacy tokens_used data)

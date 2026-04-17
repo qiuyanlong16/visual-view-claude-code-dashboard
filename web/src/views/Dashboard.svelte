@@ -140,8 +140,8 @@
     <KPICard icon={icons.tokens} label="Total Tokens" value={formatTokens(r.totalTokens)} color="#60a5fa" sub={`${formatTokens(s.totalInputTokens)} in / ${formatTokens(s.totalOutputTokens)} out`} sparklineData={inputTrend} delay={0} onClick={() => navigate("cost")} />
     <KPICard icon={icons.cost} label="Est. Cost" value={"$" + r.totalCost.toFixed(4)} color="#4ade80" sparklineData={[]} delay={50} onClick={() => navigate("cost")} />
     <KPICard icon={icons.agents} label="Agent Calls" value={String(r.activeAgents)} color="#a78bfa" sub={`${Object.values(s.agentCounts || {}).reduce((a, b) => a + b, 0)} total`} delay={100} />
-    <KPICard icon={icons.tools} label="Tool Calls" value={String(r.totalTools)} color="#fbbf24" sub={`${Object.keys(s.toolCounts || {}).length} tools`} delay={150} onClick={() => navigate("live")} />
-    <KPICard icon={icons.skills} label="Skills Used" value={String(r.totalSkills)} color="#f87171" sub={`${Object.keys(s.skillCounts || {}).length} unique`} delay={200} onClick={() => navigate("skills")} />
+    <KPICard icon={icons.tools} label="Tool Calls" value={String(r.totalTools)} color="#fbbf24" sub={`${Object.keys(s.toolCounts || {}).length} tools`} delay={150} onClick={() => navigate("tools")} />
+    <KPICard icon={icons.skills} label="Skills Used" value={String(r.totalSkills)} color="#f87171" sub={`${Object.keys(s.skillCounts || {}).length} unique`} delay={200} onClick={() => navigate("tools")} />
     <KPICard icon={icons.errors} label="Errors" value={String(r.errorCount)} color="#ef4444" sub={r.errorCount === 0 ? "All clear" : "Last: " + (r.recentErrors[0]?.timestamp?.slice(11, 19) || "unknown")} delay={250} onClick={() => navigate("live")} />
   </div>
 

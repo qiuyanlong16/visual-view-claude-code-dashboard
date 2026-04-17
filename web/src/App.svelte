@@ -4,9 +4,10 @@
   import LiveFeed from "./views/LiveFeed.svelte";
   import SessionTimeline from "./views/SessionTimeline.svelte";
   import MemoryInspector from "./views/MemoryInspector.svelte";
-  import SkillsUsage from "./views/SkillsUsage.svelte";
+  import SkillsUsage from "./views/ToolsUsage.svelte";
   import CostAnalytics from "./views/CostAnalytics.svelte";
   import SessionOverview from "./views/SessionOverview.svelte";
+  import CCPlaybook from "./views/CCPlaybook.svelte";
 
   import { connectSSE, fetchHistory } from "./stores/events.js";
   import { fetchSessions } from "./stores/sessions.js";
@@ -22,9 +23,10 @@
     { id: "live", label: "Live Feed" },
     { id: "timeline", label: "Session Timeline" },
     { id: "memory", label: "Memory Inspector" },
-    { id: "skills", label: "Skills Usage" },
+    { id: "tools", label: "Tools" },
     { id: "cost", label: "Cost & Tokens" },
     { id: "overview", label: "Session Overview" },
+    { id: "playbook", label: "CC Playbook" },
   ];
 
   async function init() {
@@ -62,12 +64,14 @@
       <SessionTimeline />
     {:else if $currentRoute === "memory"}
       <MemoryInspector />
-    {:else if $currentRoute === "skills"}
+    {:else if $currentRoute === "tools"}
       <SkillsUsage />
     {:else if $currentRoute === "cost"}
       <CostAnalytics />
     {:else if $currentRoute === "overview"}
       <SessionOverview />
+    {:else if $currentRoute === "playbook"}
+      <CCPlaybook />
     {/if}
   </main>
 </div>

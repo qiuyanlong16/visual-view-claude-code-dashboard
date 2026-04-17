@@ -24,21 +24,42 @@ function tokensFromTranscript(transcriptPath, fallbackModel) {
   if (!transcriptPath || !existsSync(transcriptPath)) return null;
   try {
     const lines = readFileSync(transcriptPath, "utf-8").trim().split("\n").filter(Boolean);
-    let inputTokens = 0, cacheReadTokens = 0, cacheCreationTokens = 0, outputTokens = 0, model = fallbackModel;
+    let inputTokens = 0, outputTokens = 0, model = fallbackModel;
     for (const line of lines) {
       const entry = JSON.parse(line);
       if (entry.type === "assistant" && entry.message?.usage) {
         const u = entry.message.usage;
         inputTokens += u.input_tokens || 0;
-        cacheReadTokens += u.cache_read_input_tokens || 0;
-        cacheCreationTokens += u.cache_creation_input_tokens || 0;
         outputTokens += u.output_tokens || 0;
         model = entry.message.model || model;
       }
     }
-    return { inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens, model };
+    return { inputTokens, outputTokens, model };
   } catch {
     return null;
+  }
+}
+
+// Extract tool calls from a transcript file (JSONL)
+function toolsFromTranscript(transcriptPath) {
+  if (!transcriptPath || !existsSync(transcriptPath)) return {};
+  try {
+    const lines = readFileSync(transcriptPath, "utf-8").trim().split("\n").filter(Boolean);
+    const tools = {};
+    for (const line of lines) {
+      const entry = JSON.parse(line);
+      if (entry.type === "assistant" && entry.message?.content && Array.isArray(entry.message.content)) {
+        for (const c of entry.message.content) {
+          if (c.type === "tool_use") {
+            const name = c.name || "unknown";
+            tools[name] = (tools[name] || 0) + 1;
+          }
+        }
+      }
+    }
+    return tools;
+  } catch {
+    return {};
   }
 }
 
@@ -80,6 +101,9 @@ export function statsRoutes(app) {
       const outputTokens = t ? t.outputTokens : 0;
       const model = t ? t.model || "unknown" : "unknown";
 
+      // Parse tools once per transcript
+      const tools = toolsFromTranscript(tp);
+
       const n = evts.length;
       const perInput = Math.round(inputTokens / n);
       const perOutput = Math.round(outputTokens / n);
@@ -104,6 +128,7 @@ export function statsRoutes(app) {
           const name = typeof mcp === "string" ? mcp : mcp.name || mcp.server_name || "unknown";
           mcpCounts[name] = (mcpCounts[name] || 0) + 1;
         }
+        // Legacy tools_used from event data (per-event)
         for (const tool of d.tools_used || []) toolCounts[tool] = (toolCounts[tool] || 0) + 1;
         for (const agent of d.agents_launched || []) {
           agentCounts[agent.name || agent.type || "unknown"] = (agentCounts[agent.name || agent.type || "unknown"] || 0) + 1;
@@ -112,6 +137,10 @@ export function statsRoutes(app) {
         if (!dailyTokens[day]) dailyTokens[day] = { input: 0, output: 0 };
         dailyTokens[day].input += perInput;
         dailyTokens[day].output += perOutput;
+      }
+      // Add transcript-parsed tools (counted once per transcript/session)
+      for (const [toolName, count] of Object.entries(tools)) {
+        toolCounts[toolName] = (toolCounts[toolName] || 0) + count;
       }
     }
 
