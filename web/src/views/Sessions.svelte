@@ -58,7 +58,8 @@
     const m = Math.floor(diff / 60000);
     if (m < 60) return `${m}m ago`;
     const h = Math.floor(m / 60);
-    return `${h}h ago`;
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
   }
 
   function formatTokens(n) {
@@ -144,7 +145,7 @@
       {#each sessionList as session}
         <div class="session-card" class:expanded={expandedSession === session.id} class:active={session.status === "active" || session.status === "running"}>
           <div class="session-header" on:click={() => expandedSession = expandedSession === session.id ? null : session.id}>
-            <span class="session-id">{session.id.slice(0, 8)}</span>
+            <span class="session-id">{session.id?.slice(0, 8) || "unknown"}</span>
             <span class="status-badge" class:active={session.status === "active" || session.status === "running"}>
               {session.status === "active" || session.status === "running" ? "active" : "ended"}
             </span>
@@ -163,7 +164,7 @@
               {#each getSessionEvents(session.id) as evt}
                   <div class="timeline-event" class:is-active={session.status === "active" || session.status === "running"}>
                     <span class="timeline-time">{(evt.timestamp || evt.receivedAt || "").slice(11, 19)}</span>
-                    <span class="timeline-badge" data-type={evt.type}>{evt.type.replace("_end", "").replace("_start", "").toUpperCase()}</span>
+                    <span class="timeline-badge" data-type={evt.type.replace("_end", "").replace("_start", "")}>{evt.type.replace("_end", "").replace("_start", "").toUpperCase()}</span>
                     {#if evt.data?.tools_used && evt.data.tools_used.length > 0}
                       <span class="timeline-tools">{evt.data.tools_used.join(", ")}</span>
                     {/if}
