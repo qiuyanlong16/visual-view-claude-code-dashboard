@@ -52,7 +52,7 @@
   <Sidebar {views} bind:view {connectionStatus} />
   <main class="content">
     {#if view === "dashboard"}
-      <Dashboard />
+      <Dashboard bind:view />
     {:else if view === "live"}
       <LiveFeed />
     {:else if view === "timeline"}

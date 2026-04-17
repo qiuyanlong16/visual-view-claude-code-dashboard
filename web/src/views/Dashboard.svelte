@@ -14,6 +14,7 @@
 
   let timeRange = "24h";
   let connectionStatus = "disconnected";
+  export let view = "dashboard";
 
   $: r = $realtime;
   $: s = $stats;
@@ -315,6 +316,29 @@
       <Heatmap data={heatmapData} />
     </div>
 
+    <!-- Skills & Plugins -->
+    <div class="d-panel" style="animation-delay: 0.62s">
+      <div class="d-panel-header">
+        <div class="d-panel-title">
+          <span class="icon" style="background: rgba(248,113,113,0.2); color: #f87171;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+          </span>
+          Skills & Plugins
+        </div>
+        <button class="d-more-btn" on:click={() => view = "skills"}>More →</button>
+      </div>
+      {#if skillRows.length === 0}
+        <div class="empty-msg">No skills or plugins used yet.</div>
+      {:else}
+        {#each skillRows as [name, count], i}
+          <div class="skill-item">
+            <span class="skill-badge" style="background: {skillColors[i % skillColors.length]}20; color: {skillColors[i % skillColors.length]};">{name}</span>
+            <span class="skill-count">{count}</span>
+          </div>
+        {/each}
+      {/if}
+    </div>
+
     <!-- Sessions Quick View -->
     <div class="d-panel" style="animation-delay: 0.65s">
       <div class="d-panel-header">
@@ -507,4 +531,17 @@
   .summary-stat { text-align: center; }
   .summary-value { font-size: 16px; font-weight: 700; }
   .summary-label { font-size: 9px; color: var(--text-muted); display: block; }
+
+  /* Skills & Plugins card */
+  .d-more-btn {
+    background: none; border: none; color: var(--accent); font-size: 11px;
+    font-weight: 600; cursor: pointer; padding: 2px 8px; border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .d-more-btn:hover { background: rgba(124,111,224,0.15); }
+  .skill-badge {
+    font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600;
+    font-family: monospace; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 180px;
+  }
 </style>
