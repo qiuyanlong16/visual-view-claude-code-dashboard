@@ -9,18 +9,58 @@ function getViewClaudePath() {
   return join(homedir(), ".view-claude.json");
 }
 
+// Claude Code stores project-specific memory at:
+// ~/.claude/projects/<project-dir-name>/memory/
+// where <project-dir-name> is the workspace dir name with path separators replaced by dashes
+function getProjectMemoryDir(projectPath) {
+  const projectsDir = join(homedir(), ".claude", "projects");
+  if (!existsSync(projectsDir)) return null;
+  // Derive the expected directory name from the project path
+  const projName = basename(projectPath).replace(/[\\/:]/g, "-");
+  // Also try the full relative path as directory name
+  const candidates = [projName];
+  // e.g. "d--workspace-visual-view-claude-code-coding"
+  const driveAndPath = projectPath.replace(/[\\/:]/g, "-").replace(/^([A-Z])-/, "$1--");
+  candidates.push(driveAndPath);
+  for (const name of candidates) {
+    const memDir = join(projectsDir, name, "memory");
+    if (existsSync(memDir)) return memDir;
+  }
+  // Fallback: scan all subdirs of ~/.claude/projects/ looking for one with a matching memory dir
+  try {
+    const entries = readdirSync(projectsDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.isDirectory()) {
+        const md = join(projectsDir, e.name, "memory");
+        if (existsSync(md)) return md;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export function memoryRoutes(app) {
   app.get("/memory", (c) => {
     const project = c.req.query("project");
     if (!project) {
       return c.json({ error: "Missing project parameter" }, 400);
     }
-    const memoryDir = join(project, ".claude", "memory");
-    if (!existsSync(memoryDir)) {
-      return c.json({ files: [] });
+    const files = [];
+    // Check standard .claude/memory/ path
+    const memDir = join(project, ".claude", "memory");
+    if (existsSync(memDir)) {
+      files.push(...listMemoryFiles(memDir));
     }
-
-    const files = listMemoryFiles(memoryDir);
+    // Check Claude Code's actual storage: ~/.claude/projects/<name>/memory/
+    const ccMemDir = getProjectMemoryDir(project);
+    if (ccMemDir && ccMemDir !== memDir) {
+      const ccFiles = listMemoryFiles(ccMemDir);
+      for (const f of ccFiles) {
+        if (!files.some((existing) => existing.name === f.name)) {
+          files.push(f);
+        }
+      }
+    }
     return c.json({ project, files });
   });
 
@@ -96,21 +136,28 @@ export function memoryRoutes(app) {
       const name = basename(projectPath) || projectPath;
       const entry = { name, memoryFiles: [], hasSettings: false, settingsContent: null, hasClaudeMd: false, claudeMdSize: 0 };
 
-      // Memory files
+      // Memory files — from both .claude/memory/ and ~/.claude/projects/<name>/memory/
       const memDir = join(projectPath, ".claude", "memory");
-      if (existsSync(memDir)) {
+      const ccMemDir = getProjectMemoryDir(projectPath);
+      const scannedDirs = new Set();
+      if (existsSync(memDir)) scannedDirs.add(memDir);
+      if (ccMemDir) scannedDirs.add(ccMemDir);
+      for (const dir of scannedDirs) {
         try {
-          const entries = readdirSync(memDir, { withFileTypes: true });
+          const entries = readdirSync(dir, { withFileTypes: true });
           for (const e of entries) {
             if (e.isFile() && e.name.endsWith(".md")) {
-              const fullPath = join(memDir, e.name);
+              const fullPath = join(dir, e.name);
               const st = statSync(fullPath);
-              entry.memoryFiles.push({
-                name: e.name,
-                path: fullPath,
-                size: st.size,
-                modified: st.mtime.toISOString(),
-              });
+              // Avoid duplicates
+              if (!entry.memoryFiles.some((f) => f.name === e.name)) {
+                entry.memoryFiles.push({
+                  name: e.name,
+                  path: fullPath,
+                  size: st.size,
+                  modified: st.mtime.toISOString(),
+                });
+              }
             }
           }
         } catch {}
