@@ -8,7 +8,6 @@
     addProject,
     removeProject,
   } from "../stores/memoryConfig.js";
-  import { fileContent } from "../stores/memory.js";
   import MemoryFileViewer from "../components/MemoryFileViewer.svelte";
 
   $: g = $globalMemory;
