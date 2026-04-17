@@ -20,6 +20,53 @@
   $: s = $stats;
   $: e = $events;
   $: sess = $sessions;
+  $: eventRate = buildEventRate(e);
+  $: maxRate = Math.max(1, ...eventRate.map(b => b.turnCount + b.agentCount));
+  $: activeSessions = sess.filter(s => s.status === "active" || s.status === "running").length;
+  $: totalEvents = e.length;
+  $: totalTurns = (s.totalTurns || 0);
+
+  function buildEventRate(evts) {
+    const now = new Date();
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    const recent = evts.filter((e) => {
+      const ts = e.timestamp || e.receivedAt;
+      return ts && new Date(ts) >= twoHoursAgo;
+    });
+    const bucketMap = new Map();
+    for (const evt of recent) {
+      const ts = new Date(evt.timestamp || evt.receivedAt);
+      const bucketMinute = Math.floor(ts.getMinutes() / 5) * 5;
+      const key = `${ts.getHours().toString().padStart(2, "0")}:${bucketMinute.toString().padStart(2, "0")}`;
+      if (!bucketMap.has(key)) {
+        bucketMap.set(key, { time: key, turnCount: 0, agentCount: 0 });
+      }
+      const bucket = bucketMap.get(key);
+      if (evt.type === "turn_end") bucket.turnCount++;
+      if (evt.type === "agent_start" || evt.type === "agent_end") bucket.agentCount++;
+    }
+    const buckets = [];
+    if (bucketMap.size > 0) {
+      const entries = [...bucketMap.entries()].sort((a, b) => {
+        const [ah, am] = a[0].split(":").map(Number);
+        const [bh, bm] = b[0].split(":").map(Number);
+        return (ah * 60 + am) - (bh * 60 + bm);
+      });
+      const firstMin = parseInt(entries[0][0].split(":")[0]) * 60 + parseInt(entries[0][0].split(":")[1]);
+      const lastMin = parseInt(entries[entries.length - 1][0].split(":")[0]) * 60 + parseInt(entries[entries.length - 1][0].split(":")[1]);
+      const effectiveLast = lastMin < firstMin ? lastMin + 1440 : lastMin;
+      let currentMin = firstMin;
+      while (currentMin <= effectiveLast) {
+        const h = Math.floor(currentMin / 60) % 24;
+        const m = currentMin % 60;
+        const key = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+        buckets.push(bucketMap.get(key) || { time: key, turnCount: 0, agentCount: 0 });
+        currentMin += 5;
+      }
+    }
+    return buckets;
+  }
+
   $: conn = $connected;
   $: isConn = conn ? "connected" : "disconnected";
 
@@ -142,7 +189,7 @@
     <KPICard icon={icons.agents} label="Agent Calls" value={String(r.activeAgents)} color="#a78bfa" sub={`${Object.values(s.agentCounts || {}).reduce((a, b) => a + b, 0)} total`} delay={100} />
     <KPICard icon={icons.tools} label="Tool Calls" value={String(r.totalTools)} color="#fbbf24" sub={`${Object.keys(s.toolCounts || {}).length} tools`} delay={150} onClick={() => navigate("tools")} />
     <KPICard icon={icons.skills} label="Skills Used" value={String(r.totalSkills)} color="#f87171" sub={`${Object.keys(s.skillCounts || {}).length} unique`} delay={200} onClick={() => navigate("tools")} />
-    <KPICard icon={icons.errors} label="Errors" value={String(r.errorCount)} color="#ef4444" sub={r.errorCount === 0 ? "All clear" : "Last: " + (r.recentErrors[0]?.timestamp?.slice(11, 19) || "unknown")} delay={250} onClick={() => navigate("live")} />
+    <KPICard icon={icons.errors} label="Errors" value={String(r.errorCount)} color="#ef4444" sub={r.errorCount === 0 ? "All clear" : "Last: " + (r.recentErrors[0]?.timestamp?.slice(11, 19) || "unknown")} delay={250} onClick={() => navigate("sessions")} />
   </div>
 
   <!-- Main Grid -->
@@ -187,7 +234,7 @@
     </div>
 
     <!-- Tool Calls -->
-    <div class="d-panel" style="animation-delay: 0.4s" on:click={() => navigate("live")} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.4s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(251,191,36,0.2); color: #fbbf24;">
@@ -234,7 +281,7 @@
     </div>
 
     <!-- Error Inspection -->
-    <div class="d-panel" style="animation-delay: 0.5s" on:click={() => navigate("live")} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.5s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(239,68,68,0.2); color: #ef4444;">
@@ -289,7 +336,7 @@
     </div>
 
     <!-- Activity Heatmap -->
-    <div class="d-panel" style="animation-delay: 0.6s" on:click={() => navigate("overview")} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.6s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
@@ -324,34 +371,43 @@
       {/if}
     </div>
 
-    <!-- Sessions Quick View -->
-    <div class="d-panel" style="animation-delay: 0.65s" on:click={() => navigate("overview")} role="button" tabindex="0">
+    <!-- Sessions Activity Chart -->
+    <div class="d-panel" style="animation-delay: 0.65s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
-          <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="12" width="2" height="9" rx="0.5"/><rect x="7" y="8" width="2" height="13" rx="0.5"/><rect x="11" y="5" width="2" height="16" rx="0.5"/><rect x="15" y="9" width="2" height="12" rx="0.5"/><rect x="19" y="3" width="2" height="18" rx="0.5"/></svg>
           </span>
-          Sessions
+          Sessions Activity
         </div>
-        <span class="d-badge" style="background: rgba(34,211,238,0.15); color: #22d3ee;">{sess.length}</span>
+        <div class="session-activity-stats">
+          <span class="sa-stat"><b style="color: #4ade80;">{activeSessions}</b> active</span>
+          <span class="sa-stat"><b>{totalEvents}</b> events</span>
+          <span class="sa-stat"><b>{totalTurns}</b> turns</span>
+        </div>
       </div>
-      {#if sess.length === 0}
-        <div class="empty-msg">No sessions yet.</div>
+      {#if eventRate.length === 0}
+        <div class="empty-msg">No events in last 2 hours.</div>
       {:else}
-        {#each sess.slice(0, 6) as session}
-          <div class="session-item">
-            <div class="session-dot" style="background: {session.status === "active" ? "var(--green)" : "var(--text-muted)"};"></div>
-            <div class="session-id">{session.id?.slice(0, 12) || "unknown"}</div>
-            <div class="session-turns">{session.events?.length || 0} events</div>
-          </div>
-        {/each}
+        <div class="event-rate-chart">
+          {#each eventRate as bucket}
+            <div class="rate-bar" title="{bucket.time}: {bucket.turnCount} turns, {bucket.agentCount} agent events">
+              <div class="rate-bar-turn" style="height: {(bucket.turnCount / maxRate) * 100}%"></div>
+              <div class="rate-bar-agent" style="height: {(bucket.agentCount / maxRate) * 100}%"></div>
+            </div>
+          {/each}
+        </div>
+        <div class="event-rate-labels">
+          <span>-2h</span>
+          <span>now</span>
+        </div>
       {/if}
     </div>
   </div>
 
   <!-- Bottom Strip -->
   <div class="dashboard-bottom">
-    <div class="d-panel" style="animation-delay: 0.7s" on:click={() => navigate("live")} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.7s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
@@ -511,4 +567,21 @@
     font-family: monospace; white-space: nowrap; overflow: hidden;
     text-overflow: ellipsis; max-width: 180px;
   }
+
+  /* Session activity chart */
+  .session-activity-stats { display: flex; gap: 10px; font-size: 10px; color: var(--text-muted); }
+  .sa-stat { display: flex; gap: 3px; align-items: center; }
+
+  .event-rate-chart {
+    display: flex; align-items: flex-end; gap: 2px; height: 80px; padding: 8px 0;
+    border-bottom: 1px solid var(--bg-secondary);
+  }
+  .event-rate-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+  .rate-bar {
+    flex: 1; display: flex; flex-direction: column-reverse; height: 100%;
+    min-height: 2px; border-radius: 2px 2px 0 0; overflow: hidden;
+  }
+  .rate-bar-turn { background: #60a5fa; min-height: 1px; transition: height 0.3s; }
+  .rate-bar-agent { background: #fbbf24; min-height: 1px; transition: height 0.3s; }
 </style>
