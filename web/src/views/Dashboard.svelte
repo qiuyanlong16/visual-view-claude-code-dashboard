@@ -10,11 +10,11 @@
   import ProgressBar from "../components/ProgressBar.svelte";
   import AgentRow from "../components/AgentRow.svelte";
   import MemoryPanel from "../components/MemoryPanel.svelte";
+  import { navigate } from "../router.js";
   import { onMount } from "svelte";
 
   let timeRange = "24h";
   let connectionStatus = "disconnected";
-  export let view = "dashboard";
 
   $: r = $realtime;
   $: s = $stats;
@@ -54,7 +54,6 @@
   // Agent rows
   $: agentList = buildAgentList(e);
   $: heatmapData = generateHeatmapData(e);
-  $: memoryStats = buildMemoryStats(e);
 
   function buildAgentList(evts) {
     const agents = new Map();
@@ -84,18 +83,6 @@
       }
     }
     return data;
-  }
-
-  function buildMemoryStats(evts) {
-    const files = new Set();
-    let reads = 0, writes = 0, lastAccess = "\u2014";
-    for (const evt of evts) {
-      const mem = evt.data?.memory_accessed;
-      if (!mem) continue;
-      for (const f of mem.read || []) { files.add(f); reads++; if (evt.timestamp) lastAccess = evt.timestamp.slice(11, 19); }
-      for (const f of mem.written || []) { files.add(f); writes++; if (evt.timestamp) lastAccess = evt.timestamp.slice(11, 19); }
-    }
-    return { count: files.size, reads, writes, lastAccess };
   }
 
   function formatTokens(n) {
@@ -150,18 +137,18 @@
 
   <!-- KPI Strip -->
   <div class="kpi-strip">
-    <KPICard icon={icons.tokens} label="Total Tokens" value={formatTokens(r.totalTokens)} color="#60a5fa" sub={`${formatTokens(s.totalInputTokens)} in / ${formatTokens(s.totalOutputTokens)} out`} sparklineData={inputTrend} delay={0} onClick={() => view = "cost"} />
-    <KPICard icon={icons.cost} label="Est. Cost" value={"$" + r.totalCost.toFixed(4)} color="#4ade80" sparklineData={[]} delay={50} onClick={() => view = "cost"} />
-    <KPICard icon={icons.agents} label="Agent Calls" value={String(r.activeAgents)} color="#a78bfa" sub={`${Object.values(s.agentCounts || {}).reduce((a, b) => a + b, 0)} total`} delay={100} onClick={() => view = "agents"} />
-    <KPICard icon={icons.tools} label="Tool Calls" value={String(r.totalTools)} color="#fbbf24" sub={`${Object.keys(s.toolCounts || {}).length} tools`} delay={150} onClick={() => view = "live"} />
-    <KPICard icon={icons.skills} label="Skills Used" value={String(r.totalSkills)} color="#f87171" sub={`${Object.keys(s.skillCounts || {}).length} unique`} delay={200} onClick={() => view = "skills"} />
-    <KPICard icon={icons.errors} label="Errors" value={String(r.errorCount)} color="#ef4444" sub={r.errorCount === 0 ? "All clear" : "Last: " + (r.recentErrors[0]?.timestamp?.slice(11, 19) || "unknown")} delay={250} onClick={() => view = "live"} />
+    <KPICard icon={icons.tokens} label="Total Tokens" value={formatTokens(r.totalTokens)} color="#60a5fa" sub={`${formatTokens(s.totalInputTokens)} in / ${formatTokens(s.totalOutputTokens)} out`} sparklineData={inputTrend} delay={0} onClick={() => navigate("cost")} />
+    <KPICard icon={icons.cost} label="Est. Cost" value={"$" + r.totalCost.toFixed(4)} color="#4ade80" sparklineData={[]} delay={50} onClick={() => navigate("cost")} />
+    <KPICard icon={icons.agents} label="Agent Calls" value={String(r.activeAgents)} color="#a78bfa" sub={`${Object.values(s.agentCounts || {}).reduce((a, b) => a + b, 0)} total`} delay={100} />
+    <KPICard icon={icons.tools} label="Tool Calls" value={String(r.totalTools)} color="#fbbf24" sub={`${Object.keys(s.toolCounts || {}).length} tools`} delay={150} onClick={() => navigate("live")} />
+    <KPICard icon={icons.skills} label="Skills Used" value={String(r.totalSkills)} color="#f87171" sub={`${Object.keys(s.skillCounts || {}).length} unique`} delay={200} onClick={() => navigate("skills")} />
+    <KPICard icon={icons.errors} label="Errors" value={String(r.errorCount)} color="#ef4444" sub={r.errorCount === 0 ? "All clear" : "Last: " + (r.recentErrors[0]?.timestamp?.slice(11, 19) || "unknown")} delay={250} onClick={() => navigate("live")} />
   </div>
 
   <!-- Main Grid -->
   <div class="dashboard-grid">
     <!-- Token Trend Chart (span 3) -->
-    <div class="d-panel d-chart-panel" style="animation-delay: 0.3s" on:click={() => view = "cost"} role="button" tabindex="0">
+    <div class="d-panel d-chart-panel" style="animation-delay: 0.3s" on:click={() => navigate("cost")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
@@ -175,7 +162,7 @@
     </div>
 
     <!-- Agent Activity -->
-    <div class="d-panel" style="animation-delay: 0.35s" on:click={() => view = "agents"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.35s">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(167,139,250,0.2); color: #a78bfa;">
@@ -200,7 +187,7 @@
     </div>
 
     <!-- Tool Calls -->
-    <div class="d-panel" style="animation-delay: 0.4s" on:click={() => view = "live"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.4s" on:click={() => navigate("live")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(251,191,36,0.2); color: #fbbf24;">
@@ -224,7 +211,7 @@
     </div>
 
     <!-- Skills Invoked -->
-    <div class="d-panel" style="animation-delay: 0.45s" on:click={() => view = "skills"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.45s" on:click={() => navigate("skills")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(248,113,113,0.2); color: #f87171;">
@@ -247,7 +234,7 @@
     </div>
 
     <!-- Error Inspection -->
-    <div class="d-panel" style="animation-delay: 0.5s" on:click={() => view = "live"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.5s" on:click={() => navigate("live")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(239,68,68,0.2); color: #ef4444;">
@@ -271,7 +258,7 @@
     </div>
 
     <!-- Memory Stats -->
-    <div class="d-panel" style="animation-delay: 0.52s" on:click={() => view = "memory"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.52s" on:click={() => navigate("memory")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(74,222,128,0.2); color: #4ade80;">
@@ -279,13 +266,13 @@
           </span>
           Memory
         </div>
-        <span class="d-badge" style="background: rgba(74,222,128,0.15); color: #4ade80;">{memoryStats.count} files</span>
+        <span class="d-badge" style="background: rgba(74,222,128,0.15); color: #4ade80;">{s.memoryStats.files} files</span>
       </div>
       <MemoryPanel />
     </div>
 
     <!-- Model Usage Donut -->
-    <div class="d-panel" style="animation-delay: 0.55s" on:click={() => view = "cost"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.55s" on:click={() => navigate("cost")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
@@ -302,7 +289,7 @@
     </div>
 
     <!-- Activity Heatmap -->
-    <div class="d-panel" style="animation-delay: 0.6s" on:click={() => view = "overview"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.6s" on:click={() => navigate("overview")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
@@ -323,7 +310,7 @@
           </span>
           Skills & Plugins
         </div>
-        <button class="d-more-btn" on:click={() => view = "skills"}>More →</button>
+        <button class="d-more-btn" on:click={() => navigate("skills")}>More →</button>
       </div>
       {#if skillRows.length === 0}
         <div class="empty-msg">No skills or plugins used yet.</div>
@@ -338,7 +325,7 @@
     </div>
 
     <!-- Sessions Quick View -->
-    <div class="d-panel" style="animation-delay: 0.65s" on:click={() => view = "overview"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.65s" on:click={() => navigate("overview")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
@@ -364,7 +351,7 @@
 
   <!-- Bottom Strip -->
   <div class="dashboard-bottom">
-    <div class="d-panel" style="animation-delay: 0.7s" on:click={() => view = "live"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.7s" on:click={() => navigate("live")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
@@ -385,7 +372,7 @@
       </div>
     </div>
 
-    <div class="d-panel" style="animation-delay: 0.75s" on:click={() => view = "timeline"} role="button" tabindex="0">
+    <div class="d-panel" style="animation-delay: 0.75s" on:click={() => navigate("timeline")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">

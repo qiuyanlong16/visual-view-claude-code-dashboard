@@ -4,7 +4,6 @@
   import LiveFeed from "./views/LiveFeed.svelte";
   import SessionTimeline from "./views/SessionTimeline.svelte";
   import MemoryInspector from "./views/MemoryInspector.svelte";
-  import AgentChain from "./views/AgentChain.svelte";
   import SkillsUsage from "./views/SkillsUsage.svelte";
   import CostAnalytics from "./views/CostAnalytics.svelte";
   import SessionOverview from "./views/SessionOverview.svelte";
@@ -13,9 +12,9 @@
   import { fetchSessions } from "./stores/sessions.js";
   import { fetchStats } from "./stores/stats.js";
   import { startRealtimePolling, stopRealtimePolling } from "./stores/realtime.js";
+  import { currentRoute, initRouter } from "./router.js";
   import { onMount, onDestroy } from "svelte";
 
-  let view = "dashboard";
   let connectionStatus = "disconnected";
 
   const views = [
@@ -23,13 +22,13 @@
     { id: "live", label: "Live Feed" },
     { id: "timeline", label: "Session Timeline" },
     { id: "memory", label: "Memory Inspector" },
-    { id: "agents", label: "Agent Chain" },
     { id: "skills", label: "Skills Usage" },
     { id: "cost", label: "Cost & Tokens" },
     { id: "overview", label: "Session Overview" },
   ];
 
   async function init() {
+    initRouter();
     const evtSource = connectSSE();
     await fetchHistory();
     await fetchSessions();
@@ -53,23 +52,21 @@
 </script>
 
 <div class="app">
-  <Sidebar {views} bind:view {connectionStatus} />
+  <Sidebar {views} {connectionStatus} />
   <main class="content">
-    {#if view === "dashboard"}
-      <Dashboard bind:view />
-    {:else if view === "live"}
+    {#if $currentRoute === "dashboard"}
+      <Dashboard />
+    {:else if $currentRoute === "live"}
       <LiveFeed />
-    {:else if view === "timeline"}
+    {:else if $currentRoute === "timeline"}
       <SessionTimeline />
-    {:else if view === "memory"}
+    {:else if $currentRoute === "memory"}
       <MemoryInspector />
-    {:else if view === "agents"}
-      <AgentChain />
-    {:else if view === "skills"}
+    {:else if $currentRoute === "skills"}
       <SkillsUsage />
-    {:else if view === "cost"}
+    {:else if $currentRoute === "cost"}
       <CostAnalytics />
-    {:else if view === "overview"}
+    {:else if $currentRoute === "overview"}
       <SessionOverview />
     {/if}
   </main>
