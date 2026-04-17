@@ -286,14 +286,21 @@ export function statsRoutes(app) {
     // Fill all 5-minute slots between first and last event
     const buckets = [];
     if (bucketMap.size > 0) {
-      const keys = [...bucketMap.keys()].sort();
-      const firstParts = keys[0].split(":");
-      let currentMin = parseInt(firstParts[0]) * 60 + parseInt(firstParts[1]);
-      const lastParts = keys[keys.length - 1].split(":");
-      const lastMin = parseInt(lastParts[0]) * 60 + parseInt(lastParts[1]);
+      // Use epoch-based minutes to handle midnight crossings correctly
+      const entries = [...bucketMap.entries()].sort((a, b) => {
+        const [ah, am] = a[0].split(":").map(Number);
+        const [bh, bm] = b[0].split(":").map(Number);
+        return (ah * 60 + am) - (bh * 60 + bm);
+      });
+      const firstMin = parseInt(entries[0][0].split(":")[0]) * 60 + parseInt(entries[0][0].split(":")[1]);
+      const lastMin = parseInt(entries[entries.length - 1][0].split(":")[0]) * 60 + parseInt(entries[entries.length - 1][0].split(":")[1]);
 
-      while (currentMin <= lastMin) {
-        const h = Math.floor(currentMin / 60);
+      // If crossing midnight, add 1440 to last
+      const effectiveLast = lastMin < firstMin ? lastMin + 1440 : lastMin;
+      let currentMin = firstMin;
+
+      while (currentMin <= effectiveLast) {
+        const h = Math.floor(currentMin / 60) % 24;
         const m = currentMin % 60;
         const key = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
         buckets.push(bucketMap.get(key) || { time: key, turnCount: 0, agentCount: 0 });
