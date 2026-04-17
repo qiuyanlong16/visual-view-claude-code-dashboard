@@ -1,6 +1,6 @@
 <script>
   import { events, connected } from "../stores/events.js";
-  import { stats } from "../stores/stats.js";
+  import { stats, eventRate } from "../stores/stats.js";
   import { realtime } from "../stores/realtime.js";
   import { sessions } from "../stores/sessions.js";
   import KPICard from "../components/KPICard.svelte";
@@ -20,52 +20,11 @@
   $: s = $stats;
   $: e = $events;
   $: sess = $sessions;
-  $: eventRate = buildEventRate(e);
-  $: maxRate = Math.max(1, ...eventRate.map(b => b.turnCount + b.agentCount));
-  $: activeSessions = sess.filter(s => s.status === "active" || s.status === "running").length;
-  $: totalEvents = e.length;
+  $: er = $eventRate;
+  $: maxRate = Math.max(1, ...er.buckets.map(b => b.turnCount + b.agentCount));
+  $: activeSessions = er.active;
+  $: totalEvents = er.totalEvents;
   $: totalTurns = (s.totalTurns || 0);
-
-  function buildEventRate(evts) {
-    const now = new Date();
-    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-    const recent = evts.filter((e) => {
-      const ts = e.timestamp || e.receivedAt;
-      return ts && new Date(ts) >= twoHoursAgo;
-    });
-    const bucketMap = new Map();
-    for (const evt of recent) {
-      const ts = new Date(evt.timestamp || evt.receivedAt);
-      const bucketMinute = Math.floor(ts.getMinutes() / 5) * 5;
-      const key = `${ts.getHours().toString().padStart(2, "0")}:${bucketMinute.toString().padStart(2, "0")}`;
-      if (!bucketMap.has(key)) {
-        bucketMap.set(key, { time: key, turnCount: 0, agentCount: 0 });
-      }
-      const bucket = bucketMap.get(key);
-      if (evt.type === "turn_end") bucket.turnCount++;
-      if (evt.type === "agent_start" || evt.type === "agent_end") bucket.agentCount++;
-    }
-    const buckets = [];
-    if (bucketMap.size > 0) {
-      const entries = [...bucketMap.entries()].sort((a, b) => {
-        const [ah, am] = a[0].split(":").map(Number);
-        const [bh, bm] = b[0].split(":").map(Number);
-        return (ah * 60 + am) - (bh * 60 + bm);
-      });
-      const firstMin = parseInt(entries[0][0].split(":")[0]) * 60 + parseInt(entries[0][0].split(":")[1]);
-      const lastMin = parseInt(entries[entries.length - 1][0].split(":")[0]) * 60 + parseInt(entries[entries.length - 1][0].split(":")[1]);
-      const effectiveLast = lastMin < firstMin ? lastMin + 1440 : lastMin;
-      let currentMin = firstMin;
-      while (currentMin <= effectiveLast) {
-        const h = Math.floor(currentMin / 60) % 24;
-        const m = currentMin % 60;
-        const key = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-        buckets.push(bucketMap.get(key) || { time: key, turnCount: 0, agentCount: 0 });
-        currentMin += 5;
-      }
-    }
-    return buckets;
-  }
 
   $: conn = $connected;
   $: isConn = conn ? "connected" : "disconnected";
@@ -386,11 +345,11 @@
           <span class="sa-stat"><b>{totalTurns}</b> turns</span>
         </div>
       </div>
-      {#if eventRate.length === 0}
+      {#if er.buckets.length === 0}
         <div class="empty-msg">No events in last 2 hours.</div>
       {:else}
         <div class="event-rate-chart">
-          {#each eventRate as bucket}
+          {#each er.buckets as bucket}
             <div class="rate-bar" title="{bucket.time}: {bucket.turnCount} turns, {bucket.agentCount} agent events">
               <div class="rate-bar-turn" style="height: {(bucket.turnCount / maxRate) * 100}%"></div>
               <div class="rate-bar-agent" style="height: {(bucket.agentCount / maxRate) * 100}%"></div>

@@ -10,7 +10,7 @@
 
   import { connectSSE, fetchHistory } from "./stores/events.js";
   import { fetchSessions } from "./stores/sessions.js";
-  import { fetchStats } from "./stores/stats.js";
+  import { fetchStats, fetchEventRate } from "./stores/stats.js";
   import { startRealtimePolling, stopRealtimePolling } from "./stores/realtime.js";
   import { currentRoute, initRouter } from "./router.js";
   import { onMount, onDestroy } from "svelte";
@@ -33,10 +33,12 @@
     await fetchHistory();
     await fetchSessions();
     await fetchStats();
+    await fetchEventRate();
     startRealtimePolling(5000);
 
     setInterval(() => fetchSessions(), 10000);
     setInterval(() => fetchStats(), 15000);
+    setInterval(() => fetchEventRate(), 5000);
   }
 
   onMount(() => {
