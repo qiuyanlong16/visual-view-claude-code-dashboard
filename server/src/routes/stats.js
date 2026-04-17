@@ -1,5 +1,5 @@
 import { getEvents, getEventCount, getEventsByType } from "../store.js";
-import { existsSync, statSync, readdirSync } from "node:fs";
+import { existsSync, statSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
@@ -19,6 +19,27 @@ function calcCost(model, inputTokens, outputTokens) {
   );
 }
 
+// Extract token usage from a transcript file (JSONL)
+function tokensFromTranscript(transcriptPath, fallbackModel) {
+  if (!transcriptPath || !existsSync(transcriptPath)) return null;
+  try {
+    const lines = readFileSync(transcriptPath, "utf-8").trim().split("\n").filter(Boolean);
+    let totalInput = 0, totalOutput = 0, model = fallbackModel;
+    for (const line of lines) {
+      const entry = JSON.parse(line);
+      if (entry.type === "assistant" && entry.message?.usage) {
+        const u = entry.message.usage;
+        totalInput += (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+        totalOutput += u.output_tokens || 0;
+        model = entry.message.model || model;
+      }
+    }
+    return { input: totalInput, output: totalOutput, model };
+  } catch {
+    return null;
+  }
+}
+
 export function statsRoutes(app) {
   app.get("/stats", (c) => {
     const events = getEvents(null, 10000);
@@ -35,12 +56,34 @@ export function statsRoutes(app) {
     const agentCounts = {};
     const dailyTokens = {};
 
+    // Per-session transcript cache
+    const transcriptCache = new Map();
+
     for (const evt of turnEnds) {
       const d = evt.data || {};
+      let input = 0, output = 0, model = d.model || "unknown";
+
+      // Try tokens_used from event first (legacy / test data)
       const tokens = d.tokens_used || {};
-      const input = tokens.input || 0;
-      const output = tokens.output || 0;
-      const model = d.model || "unknown";
+      if (tokens.input || tokens.output) {
+        input = tokens.input;
+        output = tokens.output;
+      } else if (d.transcript_path) {
+        const cached = transcriptCache.get(d.transcript_path);
+        if (cached) {
+          input = cached.input;
+          output = cached.output;
+          model = cached.model;
+        } else {
+          const t = tokensFromTranscript(d.transcript_path, model);
+          if (t) {
+            input = t.input;
+            output = t.output;
+            model = t.model || model;
+          }
+          transcriptCache.set(d.transcript_path, { input, output, model });
+        }
+      }
 
       totalInputTokens += input;
       totalOutputTokens += output;
