@@ -1,4 +1,4 @@
-import { getEvents, getEventCount, getEventsByType } from "../store.js";
+import { getEvents, getEventCount, getEventsByType, getSessions } from "../store.js";
 import { existsSync, statSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -254,6 +254,61 @@ export function statsRoutes(app) {
         size: memorySize,
         lastAccess: memoryLastAccess ? memoryLastAccess.toISOString() : null,
       },
+    });
+  });
+
+  app.get("/stats/events-rate", (c) => {
+    const events = getEvents(null, 10000);
+    const now = new Date();
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+
+    // Filter events to last 2 hours
+    const recent = events.filter((e) => {
+      const ts = e.timestamp || e.receivedAt;
+      return ts && new Date(ts) >= twoHoursAgo;
+    });
+
+    // Group into 5-minute buckets (24 buckets max)
+    const bucketMap = new Map();
+    for (const evt of recent) {
+      const ts = new Date(evt.timestamp || evt.receivedAt);
+      const bucketMinute = Math.floor(ts.getMinutes() / 5) * 5;
+      const key = `${ts.getHours().toString().padStart(2, "0")}:${bucketMinute.toString().padStart(2, "0")}`;
+
+      if (!bucketMap.has(key)) {
+        bucketMap.set(key, { time: key, turnCount: 0, agentCount: 0 });
+      }
+      const bucket = bucketMap.get(key);
+      if (evt.type === "turn_end") bucket.turnCount++;
+      if (evt.type === "agent_start" || evt.type === "agent_end") bucket.agentCount++;
+    }
+
+    // Fill all 5-minute slots between first and last event
+    const buckets = [];
+    if (bucketMap.size > 0) {
+      const keys = [...bucketMap.keys()].sort();
+      const firstParts = keys[0].split(":");
+      let currentMin = parseInt(firstParts[0]) * 60 + parseInt(firstParts[1]);
+      const lastParts = keys[keys.length - 1].split(":");
+      const lastMin = parseInt(lastParts[0]) * 60 + parseInt(lastParts[1]);
+
+      while (currentMin <= lastMin) {
+        const h = Math.floor(currentMin / 60);
+        const m = currentMin % 60;
+        const key = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+        buckets.push(bucketMap.get(key) || { time: key, turnCount: 0, agentCount: 0 });
+        currentMin += 5;
+      }
+    }
+
+    // Count active sessions
+    const sessions = getSessions();
+    const active = sessions.filter((s) => s.status === "active" || s.status === "running").length;
+
+    return c.json({
+      buckets,
+      active,
+      totalEvents: recent.length,
     });
   });
 }
