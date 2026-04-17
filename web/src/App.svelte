@@ -20,7 +20,6 @@
   const views = [
     { id: "dashboard", label: "Dashboard" },
     { id: "sessions", label: "Sessions" },
-
     { id: "memory", label: "Memory Inspector" },
     { id: "tools", label: "Tools" },
     { id: "cost", label: "Cost & Tokens" },
