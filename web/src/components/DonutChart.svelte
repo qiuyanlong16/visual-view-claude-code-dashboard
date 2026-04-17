@@ -25,19 +25,19 @@
 </script>
 
 <div class="donut-wrap">
-  <svg {width="size"} {height="size"} viewBox="0 0 {size} {size}">
-    <circle {cx} {cy} {r="radius"} fill="none" stroke="#161625" {stroke-width="strokeWidth}"/>
+  <svg width={size} height={size} viewBox="0 0 {size} {size}">
+    <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#161625" stroke-width={strokeWidth}/>
     {#each segments as seg, i}
       {@const attrs = segmentAttrs(seg, i)}
-      <circle {cx} {cy} {r="radius"} fill="none"
-              stroke={seg.color} {stroke-width="strokeWidth"}
+      <circle cx={cx} cy={cy} r={radius} fill="none"
+              stroke={seg.color} stroke-width={strokeWidth}
               stroke-dasharray={attrs.dasharray}
               stroke-dashoffset={attrs.dashoffset}
               stroke-linecap="round"
               transform="rotate(-90 {cx} {cy})"/>
     {/each}
-    <text {x="cx"} y={cy - 3} text-anchor="middle" fill="#e0e0f0" font-size="14" font-weight="700">{primaryPct}%</text>
-    <text {x="cx"} y={cy + 12} text-anchor="middle" fill="#606080" font-size="8">{segments[0]?.label || ""}</text>
+    <text x={cx} y={cy - 3} text-anchor="middle" fill="#e0e0f0" font-size="14" font-weight="700">{primaryPct}%</text>
+    <text x={cx} y={cy + 12} text-anchor="middle" fill="#606080" font-size="8">{segments[0]?.label || ""}</text>
   </svg>
   <div class="donut-labels">
     {#each segments as seg}

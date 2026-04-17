@@ -22,7 +22,7 @@
     {#each day as count, hi}
       <div class="heatmap-cell"
            style="background: {getColor(count, maxVal)}"
-           title="Day {di + 1}, {hi}:00 — {count} events"/>
+           title="Day {di + 1}, {hi}:00 — {count} events"></div>
     {/each}
   {/each}
 </div>
