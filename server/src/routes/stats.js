@@ -24,17 +24,19 @@ function tokensFromTranscript(transcriptPath, fallbackModel) {
   if (!transcriptPath || !existsSync(transcriptPath)) return null;
   try {
     const lines = readFileSync(transcriptPath, "utf-8").trim().split("\n").filter(Boolean);
-    let totalInput = 0, totalOutput = 0, model = fallbackModel;
+    let inputTokens = 0, cacheReadTokens = 0, cacheCreationTokens = 0, outputTokens = 0, model = fallbackModel;
     for (const line of lines) {
       const entry = JSON.parse(line);
       if (entry.type === "assistant" && entry.message?.usage) {
         const u = entry.message.usage;
-        totalInput += (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
-        totalOutput += u.output_tokens || 0;
+        inputTokens += u.input_tokens || 0;
+        cacheReadTokens += u.cache_read_input_tokens || 0;
+        cacheCreationTokens += u.cache_creation_input_tokens || 0;
+        outputTokens += u.output_tokens || 0;
         model = entry.message.model || model;
       }
     }
-    return { input: totalInput, output: totalOutput, model };
+    return { inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens, model };
   } catch {
     return null;
   }
@@ -56,34 +58,70 @@ export function statsRoutes(app) {
     const agentCounts = {};
     const dailyTokens = {};
 
-    // Per-session transcript cache
-    const transcriptCache = new Map();
+    // Group turn_end events by transcript_path, then parse each transcript ONCE
+    const transcriptEvents = new Map(); // transcript_path -> [event, ...]
+    const eventsWithoutTranscript = [];
 
     for (const evt of turnEnds) {
       const d = evt.data || {};
-      let input = 0, output = 0, model = d.model || "unknown";
-
-      // Try tokens_used from event first (legacy / test data)
-      const tokens = d.tokens_used || {};
-      if (tokens.input || tokens.output) {
-        input = tokens.input;
-        output = tokens.output;
-      } else if (d.transcript_path) {
-        const cached = transcriptCache.get(d.transcript_path);
-        if (cached) {
-          input = cached.input;
-          output = cached.output;
-          model = cached.model;
-        } else {
-          const t = tokensFromTranscript(d.transcript_path, model);
-          if (t) {
-            input = t.input;
-            output = t.output;
-            model = t.model || model;
-          }
-          transcriptCache.set(d.transcript_path, { input, output, model });
-        }
+      const tp = d.transcript_path;
+      if (tp && existsSync(tp)) {
+        if (!transcriptEvents.has(tp)) transcriptEvents.set(tp, []);
+        transcriptEvents.get(tp).push(evt);
+      } else {
+        eventsWithoutTranscript.push(evt);
       }
+    }
+
+    // Parse each transcript file once and attribute total to all referencing events
+    for (const [tp, evts] of transcriptEvents) {
+      const t = tokensFromTranscript(tp, "unknown");
+      const inputTokens = t ? t.inputTokens : 0;
+      const outputTokens = t ? t.outputTokens : 0;
+      const model = t ? t.model || "unknown" : "unknown";
+
+      const n = evts.length;
+      const perInput = Math.round(inputTokens / n);
+      const perOutput = Math.round(outputTokens / n);
+
+      for (const evt of evts) {
+        totalInputTokens += perInput;
+        totalOutputTokens += perOutput;
+        const cost = calcCost(model, perInput, perOutput);
+        totalCost += cost;
+        const d = evt.data || {};
+        if (!modelBreakdown[model]) modelBreakdown[model] = { calls: 0, input: 0, output: 0, cost: 0 };
+        modelBreakdown[model].calls++;
+        modelBreakdown[model].input += perInput;
+        modelBreakdown[model].output += perOutput;
+        modelBreakdown[model].cost += cost;
+
+        for (const skill of d.skills_invoked || []) {
+          if (skill.startsWith("plugin:")) pluginCounts[skill] = (pluginCounts[skill] || 0) + 1;
+          else skillCounts[skill] = (skillCounts[skill] || 0) + 1;
+        }
+        for (const mcp of d.mcp_servers || []) {
+          const name = typeof mcp === "string" ? mcp : mcp.name || mcp.server_name || "unknown";
+          mcpCounts[name] = (mcpCounts[name] || 0) + 1;
+        }
+        for (const tool of d.tools_used || []) toolCounts[tool] = (toolCounts[tool] || 0) + 1;
+        for (const agent of d.agents_launched || []) {
+          agentCounts[agent.name || agent.type || "unknown"] = (agentCounts[agent.name || agent.type || "unknown"] || 0) + 1;
+        }
+        const day = evt.timestamp?.slice(0, 10) || evt.receivedAt?.slice(0, 10) || "unknown";
+        if (!dailyTokens[day]) dailyTokens[day] = { input: 0, output: 0 };
+        dailyTokens[day].input += perInput;
+        dailyTokens[day].output += perOutput;
+      }
+    }
+
+    // Fallback for events without transcript (legacy data with tokens_used)
+    for (const evt of eventsWithoutTranscript) {
+      const d = evt.data || {};
+      const tokens = d.tokens_used || {};
+      const input = tokens.input || 0;
+      const output = tokens.output || 0;
+      const model = d.model || "unknown";
 
       totalInputTokens += input;
       totalOutputTokens += output;

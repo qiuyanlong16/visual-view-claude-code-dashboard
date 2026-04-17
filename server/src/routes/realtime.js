@@ -15,22 +15,26 @@ function calcCost(model, inputTokens, outputTokens) {
 }
 
 // Extract token usage from a transcript file (JSONL)
+// Returns actual billed tokens (input_tokens = new, cache_read = cached read,
+// cache_creation = newly cached, output_tokens = model output)
 function tokensFromTranscript(transcriptPath, lastModel) {
   if (!transcriptPath || !existsSync(transcriptPath)) return null;
   try {
     const lines = readFileSync(transcriptPath, "utf-8").trim().split("\n").filter(Boolean);
-    let totalInput = 0, totalOutput = 0;
+    let inputTokens = 0, cacheReadTokens = 0, cacheCreationTokens = 0, outputTokens = 0;
     let model = lastModel;
     for (const line of lines) {
       const entry = JSON.parse(line);
       if (entry.type === "assistant" && entry.message?.usage) {
         const u = entry.message.usage;
-        totalInput += (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
-        totalOutput += u.output_tokens || 0;
+        inputTokens += u.input_tokens || 0;
+        cacheReadTokens += u.cache_read_input_tokens || 0;
+        cacheCreationTokens += u.cache_creation_input_tokens || 0;
+        outputTokens += u.output_tokens || 0;
         model = entry.message.model || model;
       }
     }
-    return { input: totalInput, output: totalOutput, model };
+    return { inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens, model };
   } catch {
     return null;
   }
@@ -48,37 +52,50 @@ export function realtimeRoutes(app) {
     let totalTools = 0;
     let totalSkills = 0;
 
-    // Per-session transcript usage cache (avoid re-parsing same transcript multiple times)
-    const transcriptCache = new Map();
+    // Group turn_end events by transcript_path — each transcript is parsed ONCE
+    const transcriptEvents = new Map();
+    const eventsWithoutTranscript = [];
 
     for (const evt of turnEnds) {
       const d = evt.data || {};
-      let input = 0, output = 0, model = d.model || "unknown";
-
-      // Try tokens_used from event first (legacy / test data)
-      const tokens = d.tokens_used || {};
-      if (tokens.input || tokens.output) {
-        input = tokens.input;
-        output = tokens.output;
-        model = d.model || model;
-      } else if (d.transcript_path) {
-        // Fall back to transcript file parsing
-        const cached = transcriptCache.get(d.transcript_path);
-        if (cached) {
-          input = cached.input;
-          output = cached.output;
-          model = cached.model;
-        } else {
-          const t = tokensFromTranscript(d.transcript_path, model);
-          if (t) {
-            input = t.input;
-            output = t.output;
-            model = t.model || model;
-          }
-          transcriptCache.set(d.transcript_path, { input, output, model });
-        }
+      const tp = d.transcript_path;
+      if (tp && existsSync(tp)) {
+        if (!transcriptEvents.has(tp)) transcriptEvents.set(tp, []);
+        transcriptEvents.get(tp).push(evt);
+      } else {
+        eventsWithoutTranscript.push(evt);
       }
+    }
 
+    // Parse each transcript once, split tokens across referencing events
+    for (const [tp, evts] of transcriptEvents) {
+      const t = tokensFromTranscript(tp, "unknown");
+      const inputTokens = t ? t.inputTokens : 0;
+      const outputTokens = t ? t.outputTokens : 0;
+      const model = t ? t.model || "unknown" : "unknown";
+
+      const n = evts.length;
+      const perInput = Math.round(inputTokens / n);
+      const perOutput = Math.round(outputTokens / n);
+      const perTotal = perInput + perOutput;
+      const perCost = calcCost(model, perInput, perOutput);
+
+      for (const evt of evts) {
+        totalTokens += perTotal;
+        totalCost += perCost;
+        const d = evt.data || {};
+        totalTools += (d.tools_used || []).length;
+        totalSkills += (d.skills_invoked || []).length;
+      }
+    }
+
+    // Fallback for events without transcript (legacy tokens_used data)
+    for (const evt of eventsWithoutTranscript) {
+      const d = evt.data || {};
+      const tokens = d.tokens_used || {};
+      const input = tokens.input || 0;
+      const output = tokens.output || 0;
+      const model = d.model || "unknown";
       totalTokens += input + output;
       totalCost += calcCost(model, input, output);
       totalTools += (d.tools_used || []).length;
