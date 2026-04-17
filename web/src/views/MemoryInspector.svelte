@@ -38,6 +38,17 @@
     }
   }
 
+  function handleFolderPick(e) {
+    const files = e.target.files;
+    if (files.length > 0) {
+      // webkitdirectory returns files with webkitRelativePath like "project/.claude/memory/foo.md"
+      // Extract the root folder path from the first file
+      const parts = files[0].webkitRelativePath.split("/");
+      // Take the first segment as the project root
+      newProjectPath = parts[0];
+    }
+  }
+
   function formatSize(bytes) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -114,7 +125,11 @@
 
   {#if showAddForm}
     <div class="add-form">
-      <input type="text" bind:value={newProjectPath} placeholder="Project path (e.g. /path/to/project)" />
+      <input type="text" bind:value={newProjectPath} placeholder="Project path (e.g. D:/workspace/my-project)" />
+      <label class="folder-btn" title="Pick a folder">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        <input type="file" webkitdirectory on:change={handleFolderPick} />
+      </label>
       <button class="save-btn" on:click={handleAddProject}>Save</button>
       <button class="cancel-btn" on:click={() => showAddForm = false}>Cancel</button>
     </div>
@@ -233,9 +248,16 @@
   }
 
   .add-form {
-    display: flex; gap: 8px; margin-bottom: 12px;
+    display: flex; gap: 8px; margin-bottom: 12px; align-items: center;
   }
-  .add-form input { flex: 1; }
+  .add-form input[type="text"] { flex: 1; }
+  .folder-btn {
+    display: flex; align-items: center; justify-content: center;
+    padding: 4px 8px; background: var(--bg-tertiary); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text-secondary); cursor: pointer;
+  }
+  .folder-btn:hover { background: var(--bg-hover); }
+  .folder-btn input[type="file"] { display: none; }
   .save-btn {
     background: var(--green); color: white; border: none; border-radius: 4px;
     padding: 4px 12px; font-size: 12px; cursor: pointer;
