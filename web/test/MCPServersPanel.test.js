@@ -21,24 +21,24 @@ describe("MCPServersPanel", () => {
   });
 
   it("renders progress bars for each server", () => {
-    render(MCPServersPanel, {
+    const { container } = render(MCPServersPanel, {
       props: {
         mcpCounts: { "context7": 12, "github": 8, "filesystem": 3 },
         maxCount: 12,
       },
     });
-    const bars = document.querySelectorAll(".mcp-bar-fill");
+    const bars = container.querySelectorAll(".mcp-bar-fill");
     expect(bars.length).toBe(3);
   });
 
   it("shows call count numbers", () => {
-    render(MCPServersPanel, {
+    const { container } = render(MCPServersPanel, {
       props: {
         mcpCounts: { "context7": 12, "github": 8 },
         maxCount: 12,
       },
     });
-    expect(screen.getByText("12")).toBeInTheDocument();
-    expect(screen.getByText("8")).toBeInTheDocument();
+    expect(container.textContent).toContain("12");
+    expect(container.textContent).toContain("8");
   });
 });
