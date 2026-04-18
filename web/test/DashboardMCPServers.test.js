@@ -10,7 +10,7 @@ const { eventsStore, connectedStore, statsStore, eventRateStore, realtimeStore, 
       totalTurns: 10, totalInputTokens: 5000, totalOutputTokens: 3000, totalCost: 0.05,
       toolCounts: {}, skillCounts: {}, agentCounts: {}, dailyTokens: {}, modelBreakdown: {},
       memoryStats: { files: 5, size: 1000, lastAccess: null },
-      mcpCounts: { "context7": 12, "github": 8, "filesystem": 3 },
+      pluginCounts: { "plugin:context7": 12, "plugin:github": 8, "plugin:filesystem": 3 },
     }),
     eventRateStore: writable({
       buckets: [

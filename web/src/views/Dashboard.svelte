@@ -60,8 +60,9 @@
     .slice(0, 5);
   $: skillColors = ["#4ade80", "#60a5fa", "#fbbf24", "#a78bfa", "#f87171"];
 
-  // MCP server rows
-  $: mcpRows = Object.entries(s.mcpCounts || {})
+  // MCP server rows (plugin: prefixed skills = MCP servers)
+  $: mcpRows = Object.entries(s.pluginCounts || {})
+    .map(([name, count]) => [name.replace(/^plugin:/, ""), count])
     .sort((a, b) => b[1] - a[1]);
   $: maxMcp = mcpRows.length > 0 ? mcpRows[0][1] : 1;
 
@@ -390,7 +391,7 @@
         </div>
         <span class="d-badge" style="background: rgba(34,211,238,0.15); color: #22d3ee;">{mcpRows.length} servers</span>
       </div>
-      <MCPServersPanel mcpCounts={s.mcpCounts || {}} maxCount={maxMcp} />
+      <MCPServersPanel mcpCounts={Object.fromEntries(mcpRows)} maxCount={maxMcp} />
     </div>
   </div>
 
