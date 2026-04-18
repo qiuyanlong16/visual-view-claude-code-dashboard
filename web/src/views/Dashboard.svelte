@@ -11,6 +11,7 @@
   import AgentRow from "../components/AgentRow.svelte";
   import MemoryPanel from "../components/MemoryPanel.svelte";
   import SessionsActivityChart from "../components/SessionsActivityChart.svelte";
+  import MCPServersPanel from "../components/MCPServersPanel.svelte";
   import { navigate } from "../router.js";
   import { onMount } from "svelte";
 
@@ -58,6 +59,11 @@
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
   $: skillColors = ["#4ade80", "#60a5fa", "#fbbf24", "#a78bfa", "#f87171"];
+
+  // MCP server rows
+  $: mcpRows = Object.entries(s.mcpCounts || {})
+    .sort((a, b) => b[1] - a[1]);
+  $: maxMcp = mcpRows.length > 0 ? mcpRows[0][1] : 1;
 
   // Agent rows
   $: agentList = buildAgentList(e);
@@ -352,7 +358,7 @@
     </div>
 
     <!-- Sessions Activity Chart (full width, Row 3) -->
-    <div class="d-panel" style="animation-delay: 0.65s" on:click={() => navigate("sessions")} role="button" tabindex="0">
+    <div class="d-panel d-sessions-activity" style="animation-delay: 0.65s" on:click={() => navigate("sessions")} role="button" tabindex="0">
       <div class="d-panel-header">
         <div class="d-panel-title">
           <span class="icon" style="background: rgba(96,165,250,0.2); color: #60a5fa;">
@@ -371,6 +377,20 @@
       {:else}
         <SessionsActivityChart turnData={hourlyBuckets.turnData} agentData={hourlyBuckets.agentData} labels={hourlyBuckets.labels} />
       {/if}
+    </div>
+
+    <!-- MCP Servers -->
+    <div class="d-panel d-mcp-servers" style="animation-delay: 0.68s">
+      <div class="d-panel-header">
+        <div class="d-panel-title">
+          <span class="icon" style="background: rgba(34,211,238,0.2); color: #22d3ee;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 10h-4V6a2 2 0 00-4 0v4H6a2 2 0 000 4h4v4a2 2 0 004 0v-4h4a2 2 0 000-4z"/></svg>
+          </span>
+          MCP Servers
+        </div>
+        <span class="d-badge" style="background: rgba(34,211,238,0.15); color: #22d3ee;">{mcpRows.length} servers</span>
+      </div>
+      <MCPServersPanel mcpCounts={s.mcpCounts || {}} maxCount={maxMcp} />
     </div>
   </div>
 
@@ -463,6 +483,8 @@
   .d-chart-panel { grid-column: 1 / 4; }
   .d-skills-plugins { grid-column: 3 / 5; }
   .d-bottom-quick-jump { grid-column: 2 / 4; }
+  .d-sessions-activity { grid-column: 1 / 3; }
+  .d-mcp-servers { grid-column: 3 / 5; }
   .d-panel { min-height: 100px; }
   .d-panel[role="button"] { cursor: pointer; }
   .d-panel[role="button"]:hover { border-color: #3a3a5a; }
