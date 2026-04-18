@@ -438,20 +438,6 @@
           </div>
         {/each}
       </div>
-      <div class="session-summary">
-        <div class="summary-stat">
-          <span class="summary-value" style="color: #60a5fa;">{s.totalTurns || 0}</span>
-          <span class="summary-label">Turns</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-value" style="color: #a78bfa;">{formatTokens((s.totalInputTokens || 0) + (s.totalOutputTokens || 0))}</span>
-          <span class="summary-label">Tokens</span>
-        </div>
-        <div class="summary-stat">
-          <span class="summary-value" style="color: #4ade80;">${(s.totalCost || 0).toFixed(4)}</span>
-          <span class="summary-label">Cost</span>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -543,11 +529,6 @@
   .session-card-dot { width: 6px; height: 6px; border-radius: 50%; }
   .session-card-id { font-size: 11px; font-weight: 600; font-family: monospace; }
   .session-card-body { font-size: 10px; color: var(--text-muted); }
-
-  .session-summary { padding-top: 10px; border-top: 1px solid var(--bg-secondary); display: flex; gap: 16px; }
-  .summary-stat { text-align: center; }
-  .summary-value { font-size: 16px; font-weight: 700; }
-  .summary-label { font-size: 9px; color: var(--text-muted); display: block; }
 
   /* Skills & Plugins card */
   .d-more-btn {
