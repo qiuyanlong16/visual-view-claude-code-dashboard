@@ -133,7 +133,7 @@ Grid of active and completed sessions with live status indicators. Shows project
 - **JSONL over SQLite** — append-only event streams are a natural fit for JSON Lines; no query layer needed beyond time-range filtering and replay
 - **Hono over Express** — lighter weight, modern API, built-in SSE helpers
 - **Dark theme only** — monitoring tools are dark theme; no light theme toggle
-- **English only** — all UI, labels, and messages in English; no i18n infrastructure
+
 
 ## Project Structure
 
